@@ -2,29 +2,29 @@
 
 /*********************************************************************
 
-	ECHOVE, Brightcove PHP SDK
+	Echove, Brightcove PHP SDK
 
 	Official Website - http://echove.net
 	Code Repository - http://code.google.com/p/echove
-	
+
 	Authors:
 		Matthew Congrove, Services Engineer, Brightcove, Inc
 		Brian Franklin, Services Engineer, Brightcove, Inc
 
 	Copyright 2009 Matthew Congrove, Brian Franklin
-	
+
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
 	You may obtain a copy of the License at
-	
+
 		http://www.apache.org/licenses/LICENSE-2.0
-	
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
-	
+
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+	either express or implied. See the License for the specific
+	language governing permissions and limitations under the License.
+
 *********************************************************************/
 
 class Echove
@@ -39,6 +39,9 @@ class Echove
 		}
 		
 		$this->token = $token;
+		$this->page_number;
+		$this->page_size;
+		$this->total_count;
 	}
 	
 	public function find($call, $params = NULL)
@@ -161,10 +164,16 @@ class Echove
 
 				if(isset($json->items))
 				{
-					return $json->items;
+					$data = $json->items;
 				} else {
-					return $json;
+					$data = $json;
 				}
+				
+				$this->page_number = $json->page_number;
+				$this->page_size = $json->page_size;
+				$this->total_count = $json->total_count;
+				
+				return $data;
 			} else {
 				return FALSE;
 			}
@@ -172,9 +181,8 @@ class Echove
 			trigger_error(' [ECHOVE-003] API call failed ', E_USER_NOTICE);
 			return FALSE;
 		}
-		
 	}
-	
+
 }
 
 ?>
