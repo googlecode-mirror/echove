@@ -10,6 +10,12 @@
 	Authors:
 		Matthew Congrove, Services Engineer, Brightcove, Inc
 		Brian Franklin, Services Engineer, Brightcove, Inc
+		
+	Version: Echove 0.2
+
+	Change Log:
+		0.2 - Updated to include API return properties.
+		0.1 - Initial release.
 
 	Copyright 2009 Matthew Congrove, Brian Franklin
 
