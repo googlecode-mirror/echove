@@ -11,11 +11,16 @@
 		Matthew Congrove, Services Engineer, Brightcove, Inc
 		Brian Franklin, Services Engineer, Brightcove, Inc
 		
-	Version: Echove 0.2
+	Version: Echove 0.2.1
 
 	Change Log:
-		0.2 - Updated to include API return properties.
-		0.1 - Initial release.
+		0.2.1 - Setting default values to remove notices. Added inline
+				code documentation. Added utilities to convert video
+				lengths from milliseconds to formatted time or seconds
+				for ease of use and to convert video names to a
+				search-engine friendly format.
+		0.2.0 - Updated to include API return properties.
+		0.1.0 - Initial release.
 
 	Copyright 2009 Matthew Congrove, Brian Franklin
 
@@ -42,7 +47,12 @@
 class Echove
 {
 
-	function __construct($token)
+   /**
+    * @access Public
+    * @since 0.1.0
+    * @param string [$token] The API token for the Brightcove account
+    */
+	public function __construct($token)
 	{
 		if(!$token)
 		{
@@ -51,11 +61,19 @@ class Echove
 		}
 		
 		$this->token = $token;
-		$this->page_number;
-		$this->page_size;
-		$this->total_count;
+		$this->page_number = NULL;
+		$this->page_size = NULL;
+		$this->total_count = NULL;
 	}
 	
+   /**
+    * Formats the API request URL, retrieves the data, and returns it.
+    * @access Public
+    * @since 0.1.0
+    * @param string [$call] The requested API method
+    * @param array [$params] A key-value array of API parameters and values
+    * @return object An object containing all API return data
+    */
 	public function find($call, $params = NULL)
 	{
 		$call = strtolower(str_replace('find', '', str_replace('_', '', $call)));
@@ -140,6 +158,15 @@ class Echove
 		return $this->getData($url);
 	}
 	
+   /**
+    * Appends API parameters onto API request URL
+    * @access Private
+    * @since 0.1.0
+    * @param string [$method] The requested API method
+    * @param array [$params] A key-value array of API parameters and values
+    * @param string [$default] The default API parameter if only 1 provided
+    * @return string The complete API request URL
+    */
 	private function appendParams($method, $params = NULL, $default = NULL)
 	{
 		$url = 'http://api.brightcove.com/services/library?token=' . $this->token . '&command=' . $method;
@@ -159,7 +186,14 @@ class Echove
 		
 		return $url;
 	}
-	
+
+   /**
+    * Retrieves API data from provided URL
+    * @access Private
+    * @since 0.1.0
+    * @param string [$url] The complete API request URL
+    * @return object An object containing all API return data
+    */
 	private function getData($url)
 	{
 		$ch = curl_init();
@@ -193,6 +227,72 @@ class Echove
 			trigger_error(' [ECHOVE-003] API call failed ', E_USER_NOTICE);
 			return FALSE;
 		}
+	}
+	
+   /**
+    * Converts milliseconds to formatted time or seconds
+    * @access Public
+    * @since 0.2.1
+    * @param int [$ms] The length of the video in milliseconds
+    * @param bool [$seconds] Whether to return only seconds
+    * @return mixed The formatted length or total seconds of the video
+    */
+	public function time($ms, $seconds = FALSE)
+	{
+		$total_seconds = ($ms / 1000) % 60;
+			
+		if($seconds)
+		{
+			return $total_seconds;
+		} else {
+			$time = '';
+			$value = array(
+				'hours' => 0,
+				'minutes' => 0,
+				'seconds' => 0
+			);
+			
+			if($total_seconds >= 3600){
+				$value['hours'] = floor($total_seconds/3600);
+				$total_seconds = ($total_seconds%3600);
+
+				$time .= $value['hours'] . ':';
+			}
+			
+			if($total_seconds >= 60){
+				$value['minutes'] = floor($total_seconds/60);
+				$total_seconds = ($total_seconds%60);
+				
+				$time .= $value['minutes'] . ':';
+			} else {
+				$time .= '0:';
+			}
+			
+			$value['seconds'] = floor($total_seconds);
+			
+			if($value['seconds'] < 10)
+			{
+				$value['seconds'] = '0' . $value['seconds'];
+			}
+			
+			$time .= $value['seconds'];
+			
+			return $time;
+		}
+	}
+	
+   /**
+    * Formats a video name to be search-engine friendly
+    * @access Public
+    * @since 0.2.1
+    * @param string [$name] The video name
+    * @return string The SEF video name
+    */
+	public function sef($name)
+	{
+		$name = preg_replace('/[^a-zA-Z0-9]+/', '-', $name);
+		
+		return $name;
 	}
 
 }
