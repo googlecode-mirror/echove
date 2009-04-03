@@ -356,7 +356,7 @@ class Echove
 				<param name="width" value="' . $values['width'] . '" />
 				<param name="height" value="' . $values['height'] . '" />
 				<param name="playerID" value="' . $playerId . '" />'
-				. $videoCode .
+				. $videoCode
 				. $additionalCode . '
 				<param name="isVid" value="true" />
 				<param name="isUI" value="true" />
