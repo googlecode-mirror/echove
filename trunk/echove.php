@@ -14,8 +14,10 @@
  * Copyright:
  *     Copyright (c) 2009, Matthew Congrove, Brian Franklin
  * Version:
- *     Echove 0.2.2 (03 APR 2009)
+ *     Echove 0.3.0 (09 APR 2009)
  * Change Log:
+ *     0.3.0 - Added Write API methods for created, updated, and
+ *             deleting both videos and playlists.
  *     0.2.2 - Fix to remove notices. Added embed method. Corrected
  *             video lengths.
  *     0.2.1 - Setting default values to remove notices. Added inline
@@ -51,20 +53,29 @@ class Echove
    /**
     * @access Public
     * @since 0.1.0
-    * @param string [$token] The API token for the Brightcove account
+    * @param string [$token_read] The read API token for the Brightcove account
+    * @param string [$token_write] The write API token for the Brightcove account
     */
-	public function __construct($token)
+	public function __construct($token_read, $token_write = NULL)
 	{
-		if(!$token)
+		if(!$token_read)
 		{
 			trigger_error(' [ECHOVE-001] Token not provided ', E_USER_WARNING);
 			return FALSE;
 		}
 		
-		$this->token = $token;
+		$this->token_read = $token_read;
+		$this->token_write = NULL;
+		$this->read_url = 'http://api.brightcove.com/services/library?';
+		$this->write_url = 'http://api.brightcove.com/services/post';
 		$this->page_number = NULL;
 		$this->page_size = NULL;
 		$this->total_count = NULL;
+		
+		if($token_write)
+		{
+			$this->token_write = $token_write;
+		}
 	}
 	
    /**
@@ -160,7 +171,7 @@ class Echove
 
 		return $this->getData($url);
 	}
-	
+
    /**
     * Appends API parameters onto API request URL
     * @access Private
@@ -172,7 +183,7 @@ class Echove
     */
 	private function appendParams($method, $params = NULL, $default = NULL)
 	{
-		$url = 'http://api.brightcove.com/services/library?token=' . $this->token . '&command=' . $method;
+		$url = $this->read_url . 'token=' . $this->token_read . '&command=' . $method;
 		
 		if($params)
 		{
@@ -231,7 +242,275 @@ class Echove
 			return FALSE;
 		}
 	}
+
+   /**
+    * Uploads a video file to Brightcove
+    * @access Public
+    * @since 0.3.0
+    * @param resource [$file] The pointer to the temporary file
+    * @param array [$meta] The video information
+    * @param bool [$multiple] Whether or not to create multiple renditions
+    * @return mixed The video ID if successful, otherwise FALSE
+    */
+	public function createVideo($file, $meta, $multiple = FALSE)
+	{
+		if(!$this->token_write)
+		{
+			trigger_error(' [ECHOVE-004] Write token not provided ', E_USER_WARNING);
+			return FALSE;
+		}
+				
+		if(!$file)
+		{
+			trigger_error(' [ECHOVE-005] Video file not provided ', E_USER_WARNING);
+			return FALSE;
+		}
+		
+		$filename = pathinfo($file);
+		$filename = $filename['filename'];
+
+		$request = array();
+		$post = array();
+		$params = array();
+		$video = array();
+		
+		foreach($meta as $key => $value)
+		{
+			$video[$key] = $value;
+		}
+		
+		if(!$video['referenceId'])
+		{
+			$video['referenceId'] = time();
+		}
+		
+		$params['token'] = $this->token_write;
+		$params['video'] = $video;
+		$params['create_multiple_renditions'] = $multiple;
+		
+		$post['method'] = 'create_video';
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		$request['file'] = '@' . $file;
+		
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_URL, $this->write_url);
+		curl_setopt($curl, CURLOPT_POST, 1);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		$result = curl_exec($curl);
+		
+		if(curl_errno($curl))
+		{
+			trigger_error(' [ECHOVE-006] Video file transfer failed ', E_USER_WARNING);
+			return curl_error($curl);
+		}
+		
+		curl_close($curl);
+		
+		$result = json_decode($result);
+
+		return $result->result;
+	}
+
+   /**
+    * Creates a playlist
+    * @access Public
+    * @since 0.3.0
+    * @param array [$meta] The playlist information
+    * @return mixed The playlist ID if successful, otherwise FALSE
+    */
+	public function createPlaylist($meta)
+	{
+		if(!$this->token_write)
+		{
+			trigger_error(' [ECHOVE-004] Write token not provided ', E_USER_WARNING);
+			return FALSE;
+		}
+
+		$request = array();
+		$post = array();
+		$params = array();
+		$playlist = array();
+		
+		foreach($meta as $key => $value)
+		{
+			$playlist[$key] = $value;
+		}
+		
+		if(!$playlist['referenceId'])
+		{
+			$playlist['referenceId'] = time();
+		}
+		
+		foreach($playlist['videoIds'] as $key => $value)
+		{
+			$playlist['videoIds'][$key] = (int)$value;
+		}
+		
+		$params['token'] = $this->token_write;
+		$params['playlist'] = $playlist;
+		
+		$post['method'] = 'create_playlist';
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post);
+		
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_URL, $this->write_url);
+		curl_setopt($curl, CURLOPT_POST, 1);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		$result = curl_exec($curl);
+		
+		if(curl_errno($curl))
+		{
+			trigger_error(' [ECHOVE-009] Write API transaction failed ', E_USER_WARNING);
+			return curl_error($curl);
+		}
+		
+		curl_close($curl);
+		
+		$result = json_decode($result);
+
+		return $result->result;
+	}
 	
+   /**
+    * Updates a video or playlist
+    * @access Public
+    * @since 0.3.0
+    * @param string [$type] The item to delete, either a video or playlist
+    * @param array [$meta] The information for the video or playlist
+    */
+	public function update($type, $meta)
+	{
+		if(!$this->token_write)
+		{
+			trigger_error(' [ECHOVE-004] Write token not provided ', E_USER_WARNING);
+			return FALSE;
+		}
+		
+		$request = array();
+		$post = array();
+		$params = array();
+		$metaData = array();
+
+		$params['token'] = $this->token_write;
+		
+		if(strtolower($type) == 'video')
+		{		
+			foreach($meta as $key => $value)
+			{
+				$metaData[$key] = $value;
+			}
+		
+			$params['video'] = $metaData;
+			$post['method'] = 'update_video';
+		} elseif(strtolower($type) == 'playlist') {	
+			foreach($meta as $key => $value)
+			{
+				$metaData[$key] = $value;
+			}
+				
+			$params['playlist'] = $metaData;
+			$post['method'] = 'update_playlist';
+		} else {
+			trigger_error(' [ECHOVE-010] Update type not specified ', E_USER_WARNING);
+		}
+		
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_URL, $this->write_url);
+		curl_setopt($curl, CURLOPT_POST, 1);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		$result = curl_exec($curl);
+		
+		if(curl_errno($curl))
+		{
+			trigger_error(' [ECHOVE-009] Write API transaction failed ', E_USER_WARNING);
+			return curl_error($curl);
+		}
+		
+		curl_close($curl);
+	}
+	
+   /**
+    * Deletes a video or playlist
+    * @access Public
+    * @since 0.3.0
+    * @param string [$type] The item to delete, either a video or playlist
+    * @param int [$id] The ID of the video or playlist
+    * @param string [$ref_id] The reference ID of the video or playlist
+    * @param bool [$cascade] Whether or not to cascade the deletion
+    */
+	public function delete($type, $id = NULL, $ref_id = NULL, $cascade = TRUE)
+	{
+		if(!$this->token_write)
+		{
+			trigger_error(' [ECHOVE-004] Write token not provided ', E_USER_WARNING);
+			return FALSE;
+		}
+		
+		$request = array();
+		$post = array();
+		$params = array();
+
+		$params['token'] = $this->token_write;
+		$params['cascade'] = $cascade;
+		
+		if(strtolower($type) == 'video')
+		{
+			if($id)
+			{
+				$params['video_id'] = $id;
+			} elseif($ref_id) {
+				$params['reference_id'] = $ref_id;
+			} else {
+				trigger_error(' [ECHOVE-008] ID not provided ', E_USER_WARNING);
+			}
+			
+			$post['method'] = 'delete_video';
+		} elseif(strtolower($type) == 'playlist') {
+			if($id)
+			{
+				$params['playlist_id'] = $id;
+			} elseif($ref_id) {
+				$params['reference_id'] = $ref_id;
+			} else {
+				trigger_error(' [ECHOVE-008] ID not provided ', E_USER_WARNING);
+			}
+			
+			$post['method'] = 'delete_playlist';
+		} else {
+			trigger_error(' [ECHOVE-007] Deletion type not specified ', E_USER_WARNING);
+		}
+		
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_URL, $this->write_url);
+		curl_setopt($curl, CURLOPT_POST, 1);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		$result = curl_exec($curl);
+		
+		if(curl_errno($curl))
+		{
+			trigger_error(' [ECHOVE-009] Write API transaction failed ', E_USER_WARNING);
+			return curl_error($curl);
+		}
+		
+		curl_close($curl);
+	}
+		
    /**
     * Converts milliseconds to formatted time or seconds
     * @access Public
