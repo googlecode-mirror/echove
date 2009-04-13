@@ -14,8 +14,9 @@
  * Copyright:
  *     Copyright (c) 2009, Matthew Congrove, Brian Franklin
  * Version:
- *     Echove 0.3.0 (09 APR 2009)
+ *     Echove 0.3.1 (13 APR 2009)
  * Change Log:
+ *     0.3.1 - Improved error reporting.
  *     0.3.0 - Added Write API methods for created, updated, and
  *             deleting both videos and playlists.
  *     0.2.2 - Fix to remove notices. Added embed method. Corrected
@@ -57,24 +58,20 @@ class Echove
     * @param string [$token_write] The write API token for the Brightcove account
     */
 	public function __construct($token_read, $token_write = NULL)
-	{
-		if(!$token_read)
-		{
-			trigger_error(' [ECHOVE-001] Token not provided ', E_USER_WARNING);
-			return FALSE;
-		}
-		
+	{	
 		$this->token_read = $token_read;
-		$this->token_write = NULL;
+		$this->token_write = $token_write;
 		$this->read_url = 'http://api.brightcove.com/services/library?';
 		$this->write_url = 'http://api.brightcove.com/services/post';
+		$this->show_errors = TRUE;
 		$this->page_number = NULL;
 		$this->page_size = NULL;
 		$this->total_count = NULL;
-		
-		if($token_write)
+
+		if(!$token_read)
 		{
-			$this->token_write = $token_write;
+			$this->triggerError('001');
+			return FALSE;
 		}
 	}
 	
@@ -155,7 +152,7 @@ class Echove
 				$default = 'player_id';
 				break;
 			default:
-				trigger_error(' [ECHOVE-002] Command <strong>' . $call . '</strong> not found ', E_USER_WARNING);
+				$this->triggerError('005');
 				return FALSE;
 				break;
 		}
@@ -210,11 +207,19 @@ class Echove
     */
 	private function getData($url)
 	{
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		$response = curl_exec($ch);
-		curl_close($ch);
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_URL, $url);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
+		$response = curl_exec($curl);
+
+		if(curl_errno($curl))
+		{
+			$this->triggerError('003');
+			echo curl_error($curl);
+			return FALSE;
+		}
+
+		curl_close($curl);
 		
 		if($response)
 		{
@@ -238,7 +243,7 @@ class Echove
 				return FALSE;
 			}
 		} else {
-			trigger_error(' [ECHOVE-003] API call failed ', E_USER_NOTICE);
+			$this->triggerError('003');
 			return FALSE;
 		}
 	}
@@ -256,13 +261,13 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			trigger_error(' [ECHOVE-004] Write token not provided ', E_USER_WARNING);
+			$this->triggerError('002');
 			return FALSE;
 		}
 				
 		if(!$file)
 		{
-			trigger_error(' [ECHOVE-005] Video file not provided ', E_USER_WARNING);
+			$this->triggerError('009');
 			return FALSE;
 		}
 		
@@ -303,15 +308,22 @@ class Echove
 		
 		if(curl_errno($curl))
 		{
-			trigger_error(' [ECHOVE-006] Video file transfer failed ', E_USER_WARNING);
-			return curl_error($curl);
+			$this->triggerError('010');
+			echo curl_error($curl);
+			return FALSE;
 		}
 		
 		curl_close($curl);
 		
 		$result = json_decode($result);
 
-		return $result->result;
+		if($return->result)
+		{
+			return $result->result;
+		} else {
+			$this->triggerError('11');
+			return FALSE;
+		}
 	}
 
    /**
@@ -325,7 +337,7 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			trigger_error(' [ECHOVE-004] Write token not provided ', E_USER_WARNING);
+			$this->triggerError('002');
 			return FALSE;
 		}
 
@@ -366,15 +378,22 @@ class Echove
 		
 		if(curl_errno($curl))
 		{
-			trigger_error(' [ECHOVE-009] Write API transaction failed ', E_USER_WARNING);
-			return curl_error($curl);
+			$this->triggerError('004');
+			echo curl_error($curl);
+			return FALSE;
 		}
 		
 		curl_close($curl);
 		
 		$result = json_decode($result);
 
-		return $result->result;
+		if($result->result)
+		{
+			return $result->result;
+		} else {
+			$this->error('011');
+			return FALSE;
+		}
 	}
 	
    /**
@@ -388,7 +407,7 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			trigger_error(' [ECHOVE-004] Write token not provided ', E_USER_WARNING);
+			$this->triggerError('002');
 			return FALSE;
 		}
 		
@@ -417,7 +436,8 @@ class Echove
 			$params['playlist'] = $metaData;
 			$post['method'] = 'update_playlist';
 		} else {
-			trigger_error(' [ECHOVE-010] Update type not specified ', E_USER_WARNING);
+			$this->triggerError('006');
+			return FALSE;
 		}
 		
 		$post['params'] = $params;
@@ -433,8 +453,9 @@ class Echove
 		
 		if(curl_errno($curl))
 		{
-			trigger_error(' [ECHOVE-009] Write API transaction failed ', E_USER_WARNING);
-			return curl_error($curl);
+			$this->triggerError('004');
+			echo curl_error($curl);
+			return FALSE;
 		}
 		
 		curl_close($curl);
@@ -453,7 +474,7 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			trigger_error(' [ECHOVE-004] Write token not provided ', E_USER_WARNING);
+			$this->triggerError('002');
 			return FALSE;
 		}
 		
@@ -472,7 +493,8 @@ class Echove
 			} elseif($ref_id) {
 				$params['reference_id'] = $ref_id;
 			} else {
-				trigger_error(' [ECHOVE-008] ID not provided ', E_USER_WARNING);
+				$this->triggerError('008');
+				return FALSE;
 			}
 			
 			$post['method'] = 'delete_video';
@@ -483,12 +505,14 @@ class Echove
 			} elseif($ref_id) {
 				$params['reference_id'] = $ref_id;
 			} else {
-				trigger_error(' [ECHOVE-008] ID not provided ', E_USER_WARNING);
+				$this->triggerError('008');
+				return FALSE;
 			}
 			
 			$post['method'] = 'delete_playlist';
 		} else {
-			trigger_error(' [ECHOVE-007] Deletion type not specified ', E_USER_WARNING);
+			$this->triggerError('007');
+			return FALSE;
 		}
 		
 		$post['params'] = $params;
@@ -504,8 +528,9 @@ class Echove
 		
 		if(curl_errno($curl))
 		{
-			trigger_error(' [ECHOVE-009] Write API transaction failed ', E_USER_WARNING);
-			return curl_error($curl);
+			$this->triggerError('004');
+			echo curl_error($curl);
+			return FALSE;
 		}
 		
 		curl_close($curl);
@@ -643,6 +668,73 @@ class Echove
 		';
 		
 		return $code;
+	}
+
+   /**
+    * Triggers an error if errors are enabled
+    * @access Public
+    * @since 0.3.1
+    * @param string [$err_code] The code number of an error
+    */	
+	private function triggerError($err_code)
+	{
+		if($this->show_errors)
+		{
+			switch($err_code)
+			{
+				case '001':
+					$text = 'Read token not provided';
+					$type = 'WARNING';
+					break;
+				case '002':
+					$text = 'Write token not provided';
+					$type = 'WARNING';
+					break;
+				case '003':
+					$text = 'Read API transaction failed';
+					$type = 'NOTICE';
+					break;
+				case '004':
+					$text = 'Write API transaction failed';
+					$type = 'WARNING';
+					break;
+				case '005':
+					$text = 'Requested method not found';
+					$type = 'WARNING';
+					break;
+				case '006':
+					$text = 'Update type not specified';
+					$type = 'WARNING';
+					break;
+				case '007':
+					$text = 'Deletion type not specified';
+					$type = 'WARNING';
+					break;
+				case '008':
+					$text = 'ID not provided';
+					$type = 'WARNING';
+					break;
+				case '009':
+					$text = 'Video file not provided';
+					$type = 'WARNING';
+					break;
+				case '010':
+					$text = 'Video file transfer failed';
+					$type = 'WARNING';
+					break;
+				case '011':
+					$text = 'Unknown API error';
+					$type = 'WARNING';
+					break;
+			}
+			
+			if($type == 'NOTICE')
+			{
+				trigger_error(' [ECHOVE-' . $err_code . '] ' . $text . ' ', E_USER_NOTICE);
+			} elseif($type == 'WARNING') {
+				trigger_error(' [ECHOVE-' . $err_code . '] ' . $text . ' ', E_USER_WARNING);
+			}
+		}
 	}
 
 }
