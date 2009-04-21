@@ -9,15 +9,18 @@
  * Code Repository:
  *     http://code.google.com/p/echove/
  * Authors:
- *     Matthew Congrove, Prof. Services Engineer, Brightcove, Inc.
- *     Brian Franklin, Prof. Services Engineer, Brightcove, Inc.
+ *     Matthew Congrove, Professional Services Engineer, Brightcove
+ *     Brian Franklin, Professional Services Engineer, Brightcove
  * Copyright:
  *     Copyright (c) 2009, Matthew Congrove, Brian Franklin
  * Version:
- *     Echove 0.3.1 (13 APR 2009)
+ *     Echove 0.3.2 (19 APR 2009)
  * Change Log:
+ *     0.3.2 - Added RTMP to HTTP URL function, and function to
+ *             easily parse video tags. Improved SEF function.
+ *             Added support for remote assets.
  *     0.3.1 - Improved error reporting.
- *     0.3.0 - Added Write API methods for created, updated, and
+ *     0.3.0 - Added Write API methods for creating, updating, and
  *             deleting both videos and playlists.
  *     0.2.2 - Fix to remove notices. Added embed method. Corrected
  *             video lengths.
@@ -257,22 +260,13 @@ class Echove
     * @param bool [$multiple] Whether or not to create multiple renditions
     * @return mixed The video ID if successful, otherwise FALSE
     */
-	public function createVideo($file, $meta, $multiple = FALSE)
+	public function createVideo($file = NULL, $meta, $multiple = FALSE)
 	{
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
 			return FALSE;
 		}
-				
-		if(!$file)
-		{
-			$this->triggerError('009');
-			return FALSE;
-		}
-		
-		$filename = pathinfo($file);
-		$filename = $filename['filename'];
 
 		$request = array();
 		$post = array();
@@ -297,7 +291,11 @@ class Echove
 		$post['params'] = $params;
 		
 		$request['json'] = json_encode($post) . "\n";
-		$request['file'] = '@' . $file;
+		
+		if($file)
+		{
+			$request['file'] = '@' . $file;
+		}
 		
 		$curl = curl_init();
 		curl_setopt($curl, CURLOPT_URL, $this->write_url);
@@ -589,6 +587,35 @@ class Echove
 	}
 	
    /**
+    * Parses video tags string into a key-value array
+    * @access Public
+    * @since 0.3.2
+    * @param string [$tags] The tags string from a video DTO
+    * @return array A key-value array of tags
+    */
+    public function tags($tags)
+    {
+		$return = array();
+		
+		if(count($tags) > 0)
+		{
+	    	foreach($tags as $tag)
+	    	{
+	    		if(strpos($tag, '=') === FALSE)
+	    		{
+	    			$return[] = $tag;
+	    		} else {
+	    			$group = explode('=', $tag);
+	    			
+	    			$return[trim($group[0])] = trim($group[1]);
+	    		}
+	    	}
+	    }
+		
+		return $return;
+    }
+	
+   /**
     * Formats a video name to be search-engine friendly
     * @access Public
     * @since 0.2.1
@@ -597,9 +624,48 @@ class Echove
     */
 	public function sef($name)
 	{
-		$name = preg_replace('/[^a-zA-Z0-9]+/', '-', $name);
+		$name = preg_replace('/[^a-zA-Z0-9\s]+/', '', $name);
+		$name = preg_replace('/\s/', '-', $name);
 		
 		return $name;
+	}
+	
+   /**
+    * Retrieves the HTTP URL from a streaming asset (RTMP).
+    * @access Public
+    * @since 0.3.2
+    * @param string [$flvurl] The RTMP FLV URL of an asset
+    * @return string The HTTP URL of an asset
+    */
+	public function downloadUrl($flvurl)
+	{
+		$return = '';
+		$url = 'http://brightcove.vo.llnwd.net/';
+		$matches = array();
+		
+		$preg = preg_match('/((.*?)\/)*/', $flvurl, $matches);
+		$filename = preg_replace('/.*\//', '', $flvurl);
+		$filename = preg_replace('/&.*/', '', $filename);
+
+		if(strpos($flvurl, 'mp4') !== false)
+		{
+			$filename .= '.mp4';
+		} else {
+			$filename .= '.flv';
+		}
+		
+		if(strpos($flvurl, 'd5') !== false)
+		{
+			$return = ($url . 'pd5/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvurl, 'o2') !== false) {
+			$return = ($url . 'pd2/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvurl, 'd6') !== false) {
+			$return = ($url . 'pd6/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvurl, 'd7') !== false) {
+			$return = ($url . 'pd7/media/' . $matches[2] . '/' . $filename);
+		}
+		
+		return $return;
 	}
 	
    /**
@@ -672,7 +738,7 @@ class Echove
 
    /**
     * Triggers an error if errors are enabled
-    * @access Public
+    * @access Private
     * @since 0.3.1
     * @param string [$err_code] The code number of an error
     */	
