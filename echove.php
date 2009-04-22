@@ -14,8 +14,9 @@
  * Copyright:
  *     Copyright (c) 2009, Matthew Congrove, Brian Franklin
  * Version:
- *     Echove 0.3.2 (19 APR 2009)
+ *     Echove 0.3.3 (22 APR 2009)
  * Change Log:
+ *     0.3.3 - Fixed RTMP to HTTP URL function. Fixed video upload.
  *     0.3.2 - Added RTMP to HTTP URL function, and function to
  *             easily parse video tags. Improved SEF function.
  *             Added support for remote assets.
@@ -285,7 +286,13 @@ class Echove
 		
 		$params['token'] = $this->token_write;
 		$params['video'] = $video;
-		$params['create_multiple_renditions'] = $multiple;
+		
+		if($multiple)
+		{
+			$params['create_multiple_renditions'] = "TRUE";
+		} else {
+			$params['create_multiple_renditions'] = "FALSE";
+		}
 		
 		$post['method'] = 'create_video';
 		$post['params'] = $params;
@@ -315,7 +322,7 @@ class Echove
 		
 		$result = json_decode($result);
 
-		if($return->result)
+		if($result->result)
 		{
 			return $result->result;
 		} else {
@@ -637,31 +644,31 @@ class Echove
     * @param string [$flvurl] The RTMP FLV URL of an asset
     * @return string The HTTP URL of an asset
     */
-	public function downloadUrl($flvurl)
+	public function downloadUrl($flvUrl)
 	{
 		$return = '';
 		$url = 'http://brightcove.vo.llnwd.net/';
 		$matches = array();
 		
-		$preg = preg_match('/((.*?)\/)*/', $flvurl, $matches);
-		$filename = preg_replace('/.*\//', '', $flvurl);
+		$preg = preg_match('/((.*?)\/)*/', $flvUrl, $matches);
+		$filename = preg_replace('/.*\//', '', $flvUrl);
 		$filename = preg_replace('/&.*/', '', $filename);
 
-		if(strpos($flvurl, 'mp4') !== false)
+		if(strpos($flvUrl, 'mp4') !== false)
 		{
 			$filename .= '.mp4';
 		} else {
 			$filename .= '.flv';
 		}
 		
-		if(strpos($flvurl, 'd5') !== false)
+		if(strpos($flvUrl, '/d5/') !== false)
 		{
 			$return = ($url . 'pd5/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvurl, 'o2') !== false) {
+		} elseif(strpos($flvUrl, '/o2/') !== false) {
 			$return = ($url . 'pd2/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvurl, 'd6') !== false) {
+		} elseif(strpos($flvUrl, '/d6/') !== false) {
 			$return = ($url . 'pd6/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvurl, 'd7') !== false) {
+		} elseif(strpos($flvUrl, '/d7/') !== false) {
 			$return = ($url . 'pd7/media/' . $matches[2] . '/' . $filename);
 		}
 		
