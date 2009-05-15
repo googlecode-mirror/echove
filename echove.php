@@ -14,8 +14,9 @@
  * Copyright:
  *     Copyright (c) 2009, Matthew Congrove, Brian Franklin
  * Version:
- *     Echove 0.3.3 (22 APR 2009)
+ *     Echove 0.3.4 (15 MAY 2009)
  * Change Log:
+ *     0.3.4 - Improved error reporting. Added image upload.
  *     0.3.3 - Fixed RTMP to HTTP URL function. Fixed video upload.
  *     0.3.2 - Added RTMP to HTTP URL function, and function to
  *             easily parse video tags. Improved SEF function.
@@ -170,7 +171,15 @@ class Echove
 			$url = $this->appendParams($method, $params);
 		}
 
-		return $this->getData($url);
+		$result = $this->getData($url);
+		
+		if($result->error)
+		{
+			$this->triggerError('11');
+			return FALSE;
+		} else {
+			return $result;
+		}
 	}
 
    /**
@@ -251,7 +260,7 @@ class Echove
 			return FALSE;
 		}
 	}
-
+	
    /**
     * Uploads a video file to Brightcove
     * @access Public
@@ -289,9 +298,9 @@ class Echove
 		
 		if($multiple)
 		{
-			$params['create_multiple_renditions'] = "TRUE";
+			$params['create_multiple_renditions'] = 'TRUE';
 		} else {
-			$params['create_multiple_renditions'] = "FALSE";
+			$params['create_multiple_renditions'] = 'FALSE';
 		}
 		
 		$post['method'] = 'create_video';
@@ -326,7 +335,92 @@ class Echove
 		{
 			return $result->result;
 		} else {
-			$this->triggerError('11');
+			$this->triggerError('011');
+			return FALSE;
+		}
+	}
+	
+   /**
+    * Uploads an image file to Brightcove
+    * @access Public
+    * @since 0.3.4
+    * @param resource [$file] The pointer to the temporary file
+    * @param array [$meta] The image information
+    * @param int [$video_id] The ID of the video asset to assign the image to
+    * @param bool [$resize] Whether or not to resize the image on upload
+    * @return mixed The image asset ID if successful, otherwise FALSE
+    */
+	public function createImage($file = NULL, $meta, $video_id = NULL, $resize = TRUE)
+	{
+		if(!$this->token_write)
+		{
+			$this->triggerError('002');
+			return FALSE;
+		}
+		
+		$request = array();
+		$post = array();
+		$image = array();
+		$params = array();
+		
+		foreach($meta as $key => $value)
+		{
+			$image[$key] = $value;
+		}
+		
+		if(!$image['referenceId'])
+		{
+			$image['referenceId'] = time();
+		}
+		
+		$params['token'] = $this->token_write;
+		$params['image'] = $image;
+		
+		if($video_id)
+		{
+			$params['video_id'] = $video_id;
+		}
+		
+		if($resize)
+		{
+			$params['resize'] = 'TRUE';
+		} else {
+			$params['resize'] = 'FALSE';
+		}
+		
+		$post['method'] = 'add_image';
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		if($file)
+		{
+			$request['file'] = '@' . $file;
+		}
+		
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_URL, $this->write_url);
+		curl_setopt($curl, CURLOPT_POST, 1);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		$result = curl_exec($curl);
+		
+		if(curl_errno($curl))
+		{
+			$this->triggerError('010');
+			echo curl_error($curl);
+			return FALSE;
+		}
+		
+		curl_close($curl);
+		
+		$result = json_decode($result);
+
+		if($result->result)
+		{
+			return $result->result->id;
+		} else {
+			$this->triggerError('012');
 			return FALSE;
 		}
 	}
@@ -600,27 +694,27 @@ class Echove
     * @param string [$tags] The tags string from a video DTO
     * @return array A key-value array of tags
     */
-    public function tags($tags)
-    {
+	public function tags($tags)
+	{
 		$return = array();
-		
+	
 		if(count($tags) > 0)
 		{
-	    	foreach($tags as $tag)
-	    	{
-	    		if(strpos($tag, '=') === FALSE)
-	    		{
-	    			$return[] = $tag;
-	    		} else {
-	    			$group = explode('=', $tag);
-	    			
-	    			$return[trim($group[0])] = trim($group[1]);
-	    		}
-	    	}
-	    }
-		
+			foreach($tags as $tag)
+			{
+				if(strpos($tag, '=') === FALSE)
+				{
+					$return[] = $tag;
+				} else {
+					$group = explode('=', $tag);
+	
+					$return[trim($group[0])] = trim($group[1]);
+				}
+			}
+		}
+	
 		return $return;
-    }
+	}
 	
    /**
     * Formats a video name to be search-engine friendly
@@ -797,6 +891,10 @@ class Echove
 					break;
 				case '011':
 					$text = 'Unknown API error';
+					$type = 'WARNING';
+					break;
+				case '012':
+					$text = 'Image file transfer failed';
 					$type = 'WARNING';
 					break;
 			}
