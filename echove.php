@@ -14,8 +14,11 @@
  * Copyright:
  *     Copyright (c) 2009, Matthew Congrove, Brian Franklin
  * Version:
- *     Echove 0.3.4 (15 MAY 2009)
+ *     Echove 0.3.5 (4 JUNE 2009)
  * Change Log:
+ *     0.3.5 - Added support for 32-bit servers. Error reporting
+ *             can now be configured during instantiation. Fixed
+ *             URL encoding issue. Added support for tag arrays.
  *     0.3.4 - Improved error reporting. Added image upload.
  *     0.3.3 - Fixed RTMP to HTTP URL function. Fixed video upload.
  *     0.3.2 - Added RTMP to HTTP URL function, and function to
@@ -62,16 +65,17 @@ class Echove
     * @param string [$token_read] The read API token for the Brightcove account
     * @param string [$token_write] The write API token for the Brightcove account
     */
-	public function __construct($token_read, $token_write = NULL)
+	public function __construct($token_read, $token_write = NULL, $show_errors = FALSE)
 	{	
 		$this->token_read = $token_read;
 		$this->token_write = $token_write;
 		$this->read_url = 'http://api.brightcove.com/services/library?';
 		$this->write_url = 'http://api.brightcove.com/services/post';
-		$this->show_errors = TRUE;
+		$this->show_errors = $show_errors;
 		$this->page_number = NULL;
 		$this->page_size = NULL;
 		$this->total_count = NULL;
+		$this->bit32 = ((string)'99999999999999' == (int)'99999999999999') ? TRUE : FALSE;
 
 		if(!$token_read)
 		{
@@ -199,11 +203,11 @@ class Echove
 		{
 			if($default)
 			{
-				$url .= '&' . $default . '=' . $params;
+				$url .= '&' . $default . '=' . urlencode($params);
 			} else {
 				foreach($params as $option => $value)
 				{
-					$url .= '&' . $option . '=' . $value;
+					$url .= '&' . $option . '=' . urlencode($value);
 				}
 			}
 		}
@@ -224,6 +228,13 @@ class Echove
 		curl_setopt($curl, CURLOPT_URL, $url);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
 		$response = curl_exec($curl);
+		
+		if($this->bit32)
+		{
+			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
+			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
+			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
+		}
 
 		if(curl_errno($curl))
 		{
@@ -318,7 +329,14 @@ class Echove
 		curl_setopt($curl, CURLOPT_POST, 1);
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$result = curl_exec($curl);
+		$response = curl_exec($curl);
+		
+		if($this->bit32)
+		{
+			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
+			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
+			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
+		}
 		
 		if(curl_errno($curl))
 		{
@@ -329,11 +347,11 @@ class Echove
 		
 		curl_close($curl);
 		
-		$result = json_decode($result);
+		$json = json_decode($response);
 
-		if($result->result)
+		if($json->result)
 		{
-			return $result->result;
+			return $json->result;
 		} else {
 			$this->triggerError('011');
 			return FALSE;
@@ -403,7 +421,14 @@ class Echove
 		curl_setopt($curl, CURLOPT_POST, 1);
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$result = curl_exec($curl);
+		$response = curl_exec($curl);
+		
+		if($this->bit32)
+		{
+			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
+			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
+			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
+		}
 		
 		if(curl_errno($curl))
 		{
@@ -414,11 +439,11 @@ class Echove
 		
 		curl_close($curl);
 		
-		$result = json_decode($result);
+		$json = json_decode($response);
 
-		if($result->result)
+		if($json->result)
 		{
-			return $result->result->id;
+			return $json->result->id;
 		} else {
 			$this->triggerError('012');
 			return FALSE;
@@ -473,7 +498,14 @@ class Echove
 		curl_setopt($curl, CURLOPT_POST, 1);
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$result = curl_exec($curl);
+		$response = curl_exec($curl);
+		
+		if($this->bit32)
+		{
+			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
+			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
+			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
+		}
 		
 		if(curl_errno($curl))
 		{
@@ -484,11 +516,11 @@ class Echove
 		
 		curl_close($curl);
 		
-		$result = json_decode($result);
+		$json = json_decode($response);
 
-		if($result->result)
+		if($json->result)
 		{
-			return $result->result;
+			return $json->result;
 		} else {
 			$this->error('011');
 			return FALSE;
@@ -499,7 +531,7 @@ class Echove
     * Updates a video or playlist
     * @access Public
     * @since 0.3.0
-    * @param string [$type] The item to delete, either a video or playlist
+    * @param string [$type] The item to update, either a video or playlist
     * @param array [$meta] The information for the video or playlist
     */
 	public function update($type, $meta)
@@ -548,7 +580,7 @@ class Echove
 		curl_setopt($curl, CURLOPT_POST, 1);
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$result = curl_exec($curl);
+		$response = curl_exec($curl);
 		
 		if(curl_errno($curl))
 		{
@@ -623,7 +655,7 @@ class Echove
 		curl_setopt($curl, CURLOPT_POST, 1);
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$result = curl_exec($curl);
+		$response = curl_exec($curl);
 		
 		if(curl_errno($curl))
 		{
@@ -688,10 +720,10 @@ class Echove
 	}
 	
    /**
-    * Parses video tags string into a key-value array
+    * Parses video tags array into a key-value array
     * @access Public
     * @since 0.3.2
-    * @param string [$tags] The tags string from a video DTO
+    * @param array [$tags] The tags array from a video DTO
     * @return array A key-value array of tags
     */
 	public function tags($tags)
@@ -707,8 +739,20 @@ class Echove
 					$return[] = $tag;
 				} else {
 					$group = explode('=', $tag);
-	
-					$return[trim($group[0])] = trim($group[1]);
+					$key = trim($group[0]);
+					$value = trim($group[1]);
+					
+					if(!isset($return[$key]))
+					{
+						$return[$key] = $value;
+					} else {
+						if(is_array($return[$key]))
+						{
+							$return[$key][] = $value;
+						} else {
+							$return[$key] = array($return[$key], $value);
+						}
+					}
 				}
 			}
 		}
