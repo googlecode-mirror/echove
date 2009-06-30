@@ -11,11 +11,11 @@
  * Authors:
  *     Matthew Congrove, Professional Services Engineer, Brightcove
  *     Brian Franklin, Professional Services Engineer, Brightcove
- * Copyright:
- *     Copyright (c) 2009, Matthew Congrove, Brian Franklin
  * Version:
- *     Echove 0.3.5 (4 JUNE 2009)
+ *     Echove 0.3.6 (30 JUNE 2009)
  * Change Log:
+ *     0.3.6 - Added debug information, video tag filtering, and
+ *             a true Find All Videos function.
  *     0.3.5 - Added support for 32-bit servers. Error reporting
  *             can now be configured during instantiation. Fixed
  *             URL encoding issue. Added support for tag arrays.
@@ -64,18 +64,20 @@ class Echove
     * @since 0.1.0
     * @param string [$token_read] The read API token for the Brightcove account
     * @param string [$token_write] The write API token for the Brightcove account
+    * @param bool [$show_errors] Whether or not to show Echove errors
     */
 	public function __construct($token_read, $token_write = NULL, $show_errors = FALSE)
 	{	
 		$this->token_read = $token_read;
 		$this->token_write = $token_write;
+		$this->show_errors = $show_errors;
 		$this->read_url = 'http://api.brightcove.com/services/library?';
 		$this->write_url = 'http://api.brightcove.com/services/post';
-		$this->show_errors = $show_errors;
 		$this->page_number = NULL;
 		$this->page_size = NULL;
 		$this->total_count = NULL;
 		$this->bit32 = ((string)'99999999999999' == (int)'99999999999999') ? TRUE : FALSE;
+		$this->api_calls = 0;
 
 		if(!$token_read)
 		{
@@ -94,6 +96,8 @@ class Echove
     */
 	public function find($call, $params = NULL)
 	{
+		$this->api_calls++;
+		
 		$call = strtolower(str_replace('find', '', str_replace('_', '', $call)));
 		
 		switch($call)
@@ -166,10 +170,7 @@ class Echove
 				break;
 		}
 		
-		if(is_array($params))
-		{
-			$url = $this->appendParams($method, $params);
-		} else if($default) {
+		if($default) {
 			$url = $this->appendParams($method, $params, $default);
 		} else {
 			$url = $this->appendParams($method, $params);
@@ -184,6 +185,55 @@ class Echove
 		} else {
 			return $result;
 		}
+	}
+	
+   /**
+    * Finds all videos in account, ignoring pagination
+    * @access Public
+    * @since 0.3.6
+    * @param array [$params] A key-value array of API parameters and values
+    * @return object An object containing all API return data
+    */
+	public function findAll($params = NULL)
+	{
+		$videos = array();
+		$current_page = 0;
+		$total_count = 0;
+		$total_page = 1;
+		
+		$params['get_item_count'] = 'TRUE';
+		$params['page_size'] = 100;
+		$params['page_number'] = 0;
+
+		while($current_page < $total_page)
+		{
+			$params['page_number'] = $current_page;
+			
+			$url = $this->appendParams('find_all_videos', $params);
+			$result = $this->getData($url);
+			$this->api_calls++;
+			
+			if($total_count < 1)
+			{
+				$total_count = $this->total_count;
+				$total_page = ceil($total_count / 100);
+			}
+			
+			if($result->error)
+			{
+				$this->triggerError('11');
+				return FALSE;
+			} else {
+				foreach($result as $video)
+				{
+					$videos[] = $video;
+				}
+			}
+			
+			$current_page++;
+		}
+		
+		return $videos;
 	}
 
    /**
@@ -276,13 +326,15 @@ class Echove
     * Uploads a video file to Brightcove
     * @access Public
     * @since 0.3.0
-    * @param resource [$file] The pointer to the temporary file
+    * @param string [$file] The location of the temporary file
     * @param array [$meta] The video information
     * @param bool [$multiple] Whether or not to create multiple renditions
     * @return mixed The video ID if successful, otherwise FALSE
     */
 	public function createVideo($file = NULL, $meta, $multiple = FALSE)
 	{
+		$this->api_calls++;
+		
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
@@ -362,7 +414,7 @@ class Echove
     * Uploads an image file to Brightcove
     * @access Public
     * @since 0.3.4
-    * @param resource [$file] The pointer to the temporary file
+    * @param string [$file] The location of the temporary file
     * @param array [$meta] The image information
     * @param int [$video_id] The ID of the video asset to assign the image to
     * @param bool [$resize] Whether or not to resize the image on upload
@@ -370,6 +422,8 @@ class Echove
     */
 	public function createImage($file = NULL, $meta, $video_id = NULL, $resize = TRUE)
 	{
+		$this->api_calls++;
+		
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
@@ -459,6 +513,8 @@ class Echove
     */
 	public function createPlaylist($meta)
 	{
+		$this->api_calls++;
+		
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
@@ -536,6 +592,8 @@ class Echove
     */
 	public function update($type, $meta)
 	{
+		$this->api_calls++;
+		
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
@@ -603,6 +661,8 @@ class Echove
     */
 	public function delete($type, $id = NULL, $ref_id = NULL, $cascade = TRUE)
 	{
+		$this->api_calls++;
+		
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
@@ -761,6 +821,29 @@ class Echove
 	}
 	
    /**
+    * Removes videos that don't contain the appropriate tags
+    * @access Public
+    * @since 0.3.6
+    * @param array [$videos] All the videos you wish to filter
+    * @param string [$tag] A comma-separated list of tags to filter on
+    * @return array The filtered list of videos
+    */
+	public function filter($videos, $tags)
+	{
+		$filtered = array();
+		
+		foreach($videos as $video)
+		{
+			if(count(array_intersect(explode(',', $tags), $video->tags)) > 0)
+			{
+				$filtered[] = $video;
+			}
+		}
+	
+		return $filtered;
+	}
+	
+   /**
     * Formats a video name to be search-engine friendly
     * @access Public
     * @since 0.2.1
@@ -779,7 +862,7 @@ class Echove
     * Retrieves the HTTP URL from a streaming asset (RTMP).
     * @access Public
     * @since 0.3.2
-    * @param string [$flvurl] The RTMP FLV URL of an asset
+    * @param string [$flvUrl] The RTMP FLV URL of an asset
     * @return string The HTTP URL of an asset
     */
 	public function downloadUrl($flvUrl)
