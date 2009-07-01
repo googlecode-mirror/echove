@@ -12,8 +12,9 @@
  *     Matthew Congrove, Professional Services Engineer, Brightcove
  *     Brian Franklin, Professional Services Engineer, Brightcove
  * Version:
- *     Echove 0.3.6 (30 JUNE 2009)
+ *     Echove 0.3.7 (1 JULY 2009)
  * Change Log:
+ *     0.3.7 - Fixed major error in Find method.
  *     0.3.6 - Added debug information, video tag filtering, and
  *             a true Find All Videos function.
  *     0.3.5 - Added support for 32-bit servers. Error reporting
@@ -170,7 +171,7 @@ class Echove
 				break;
 		}
 		
-		if($default) {
+		if($default && !is_array($params)) {
 			$url = $this->appendParams($method, $params, $default);
 		} else {
 			$url = $this->appendParams($method, $params);
