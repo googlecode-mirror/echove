@@ -12,8 +12,10 @@
  *     Matthew Congrove, Professional Services Engineer, Brightcove
  *     Brian Franklin, Professional Services Engineer, Brightcove
  * Version:
- *     Echove 0.3.7 (1 JULY 2009)
+ *     Echove 0.3.8 (2 JULY 2009)
  * Change Log:
+ *     0.3.8 - Improved debugging. Added new API find call, and
+ *             get_item_count is now assumed as TRUE.
  *     0.3.7 - Fixed major error in Find method.
  *     0.3.6 - Added debug information, video tag filtering, and
  *             a true Find All Videos function.
@@ -97,73 +99,92 @@ class Echove
     */
 	public function find($call, $params = NULL)
 	{
-		$this->api_calls++;
-		
 		$call = strtolower(str_replace('find', '', str_replace('_', '', $call)));
 		
 		switch($call)
 		{
 			case 'allvideos':
 				$method = 'find_all_videos';
+				$get_item_count = TRUE;
 				break;
 			case 'videobyid':
 				$method = 'find_video_by_id';
 				$default = 'video_id';
+				$get_item_count = FALSE;
 				break;
 			case 'relatedvideos':
 				$method = 'find_related_videos';
 				$default = 'video_id';
+				$get_item_count = TRUE;
 				break;
 			case 'videosbyids':
 				$method = 'find_videos_by_ids';
 				$default = 'video_ids';
+				$get_item_count = FALSE;
 				break;
 			case 'videobyreferenceid':
 				$method = 'find_video_by_reference_id';
 				$default = 'reference_id';
+				$get_item_count = FALSE;
 				break;
 			case 'videosbyreferenceids':
 				$method = 'find_videos_by_reference_ids';
 				$default = 'reference_ids';
+				$get_item_count = FALSE;
 				break;
 			case 'videosbyuserid':
 				$method = 'find_videos_by_user_id';
 				$default = 'user_id';
+				$get_item_count = TRUE;
 				break;
 			case 'videosbycampaignid':
 				$method = 'find_videos_by_campaign_id';
 				$default = 'campaign_id';
+				$get_item_count = TRUE;
 				break;
 			case 'videosbytext':
 				$method = 'find_videos_by_text';
 				$default = 'text';
+				$get_item_count = TRUE;
 				break;
 			case 'videosbytags':
 				$method = 'find_videos_by_tags';
 				$default = 'or_tags';
+				$get_item_count = TRUE;
+				break;
+			case 'modifiedvideos':
+				$method = 'find_modified_videos';
+				$default = 'from_date';
+				$get_item_count = TRUE;
 				break;
 			case 'allplaylists':
 				$method = 'find_all_playlists';
+				$get_item_count = TRUE;
 				break;
 			case 'playlistbyid':
 				$method = 'find_playlist_by_id';
 				$default = 'playlist_id';
+				$get_item_count = FALSE;
 				break;
 			case 'playlistsbyids':
 				$method = 'find_playlists_by_id';
 				$default = 'playlist_ids';
+				$get_item_count = FALSE;
 				break;
 			case 'playlistbyreferenceid':
 				$method = 'find_playlist_by_reference_id';
 				$default = 'reference_id';
+				$get_item_count = FALSE;
 				break;
 			case 'playlistsbyreferenceids':
 				$method = 'find_playlists_by_reference_ids';
 				$default = 'reference_ids';
+				$get_item_count = FALSE;
 				break;
 			case 'playlistsforplayerid':
 				$method = 'find_playlists_for_player_id';
 				$default = 'player_id';
+				$get_item_count = TRUE;
 				break;
 			default:
 				$this->triggerError('005');
@@ -171,9 +192,44 @@ class Echove
 				break;
 		}
 		
+		if(isset($params['from_date']) || $default == 'from_date')
+		{
+			if($default == 'from_date' && !isset($params['from_date']))
+			{
+				$from_date = (string)$params;
+			} else {
+				$from_date = (string)$params['from_date'];
+			}
+			
+			if(strlen($from_date) > 9)
+			{
+				$from_date = floor((int)$from_date / 60);
+			}
+
+			if($default == 'from_date')
+			{			
+				$params = $from_date;
+			} else {
+				$params['from_date'] = $from_date;
+			}
+		}
+		
+		if($get_item_count)
+		{
+			if(!isset($params['get_item_count']))
+			{
+				if(!is_array($params))
+				{
+					$params[$default] = $params;
+				}
+				
+				$params['get_item_count'] = 'TRUE';
+			}
+		}
+		
 		if($default && !is_array($params)) {
 			$url = $this->appendParams($method, $params, $default);
-		} else {
+		} else {			
 			$url = $this->appendParams($method, $params);
 		}
 
@@ -212,7 +268,6 @@ class Echove
 			
 			$url = $this->appendParams('find_all_videos', $params);
 			$result = $this->getData($url);
-			$this->api_calls++;
 			
 			if($total_count < 1)
 			{
@@ -280,12 +335,7 @@ class Echove
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
 		$response = curl_exec($curl);
 		
-		if($this->bit32)
-		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
-		}
+		$this->api_calls++;
 
 		if(curl_errno($curl))
 		{
@@ -295,6 +345,13 @@ class Echove
 		}
 
 		curl_close($curl);
+		
+		if($this->bit32)
+		{
+			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
+			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
+			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
+		}
 		
 		if($response)
 		{
@@ -334,8 +391,6 @@ class Echove
     */
 	public function createVideo($file = NULL, $meta, $multiple = FALSE)
 	{
-		$this->api_calls++;
-		
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
@@ -384,12 +439,7 @@ class Echove
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 		$response = curl_exec($curl);
 		
-		if($this->bit32)
-		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
-		}
+		$this->api_calls++;
 		
 		if(curl_errno($curl))
 		{
@@ -399,6 +449,13 @@ class Echove
 		}
 		
 		curl_close($curl);
+		
+		if($this->bit32)
+		{
+			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
+			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
+			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
+		}
 		
 		$json = json_decode($response);
 
@@ -423,8 +480,6 @@ class Echove
     */
 	public function createImage($file = NULL, $meta, $video_id = NULL, $resize = TRUE)
 	{
-		$this->api_calls++;
-		
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
@@ -478,12 +533,7 @@ class Echove
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 		$response = curl_exec($curl);
 		
-		if($this->bit32)
-		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
-		}
+		$this->api_calls++;
 		
 		if(curl_errno($curl))
 		{
@@ -493,6 +543,13 @@ class Echove
 		}
 		
 		curl_close($curl);
+		
+		if($this->bit32)
+		{
+			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
+			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
+			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
+		}
 		
 		$json = json_decode($response);
 
@@ -514,8 +571,6 @@ class Echove
     */
 	public function createPlaylist($meta)
 	{
-		$this->api_calls++;
-		
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
@@ -557,12 +612,7 @@ class Echove
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 		$response = curl_exec($curl);
 		
-		if($this->bit32)
-		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
-		}
+		$this->api_calls++;
 		
 		if(curl_errno($curl))
 		{
@@ -572,6 +622,13 @@ class Echove
 		}
 		
 		curl_close($curl);
+		
+		if($this->bit32)
+		{
+			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
+			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
+			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
+		}
 		
 		$json = json_decode($response);
 
@@ -593,8 +650,6 @@ class Echove
     */
 	public function update($type, $meta)
 	{
-		$this->api_calls++;
-		
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
@@ -641,6 +696,8 @@ class Echove
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 		$response = curl_exec($curl);
 		
+		$this->api_calls++;
+		
 		if(curl_errno($curl))
 		{
 			$this->triggerError('004');
@@ -662,8 +719,6 @@ class Echove
     */
 	public function delete($type, $id = NULL, $ref_id = NULL, $cascade = TRUE)
 	{
-		$this->api_calls++;
-		
 		if(!$this->token_write)
 		{
 			$this->triggerError('002');
@@ -717,6 +772,8 @@ class Echove
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 		$response = curl_exec($curl);
+		
+		$this->api_calls++;
 		
 		if(curl_errno($curl))
 		{
@@ -1009,12 +1066,9 @@ class Echove
 					$text = 'ID not provided';
 					$type = 'WARNING';
 					break;
-				case '009':
-					$text = 'Video file not provided';
-					$type = 'WARNING';
-					break;
+				case '009': $text = ''; $type = ''; break;
 				case '010':
-					$text = 'Video file transfer failed';
+					$text = 'Media file transfer failed';
 					$type = 'WARNING';
 					break;
 				case '011':
@@ -1032,6 +1086,8 @@ class Echove
 				trigger_error(' [ECHOVE-' . $err_code . '] ' . $text . ' ', E_USER_NOTICE);
 			} elseif($type == 'WARNING') {
 				trigger_error(' [ECHOVE-' . $err_code . '] ' . $text . ' ', E_USER_WARNING);
+			} else {
+				// Deprecated, do nothing
 			}
 		}
 	}
