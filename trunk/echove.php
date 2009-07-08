@@ -12,8 +12,11 @@
  *     Matthew Congrove, Professional Services Engineer, Brightcove
  *     Brian Franklin, Professional Services Engineer, Brightcove
  * Version:
- *     Echove 0.3.8 (2 JULY 2009)
+ *     Echove 0.3.9 (8 JULY 2009)
  * Change Log:
+ *     0.3.9 - Added share_video and get_upload_status methods.
+ *             Corrected error for find_modified_videos return.
+ *             Updated error codes and reporting points.
  *     0.3.8 - Improved debugging. Added new API find call, and
  *             get_item_count is now assumed as TRUE.
  *     0.3.7 - Fixed major error in Find method.
@@ -205,9 +208,9 @@ class Echove
 			{
 				$from_date = floor((int)$from_date / 60);
 			}
-
-			if($default == 'from_date')
-			{			
+			
+			if(!is_array($params) && $default == 'from_date')
+			{
 				$params = $from_date;
 			} else {
 				$params['from_date'] = $from_date;
@@ -277,7 +280,7 @@ class Echove
 			
 			if($result->error)
 			{
-				$this->triggerError('11');
+				$this->triggerError('011');
 				return FALSE;
 			} else {
 				foreach($result as $video)
@@ -469,6 +472,77 @@ class Echove
 	}
 	
    /**
+    * Retrieves the status of a video upload
+    * @access Public
+    * @since 0.3.9
+    * @param int [$video_id] The ID of the video asset
+    * @param string [$ref_id] The reference ID of the video asset
+    * @return string The upload status
+    */
+	public function getStatus($video_id = NULL, $ref_id = TRUE)
+	{
+		if(!$this->token_write)
+		{
+			$this->triggerError('002');
+			return FALSE;
+		}
+		
+		if(!$video_id && !$ref_id)
+		{
+			$this->triggerError('008');
+		}
+		
+		$request = array();
+		$post = array();
+		$params = array();
+		
+		$params['token'] = $this->token_write;
+		
+		if($video_id)
+		{
+			$params['video_id'] = $video_id;
+		}
+		
+		if($ref_id)
+		{
+			$params['reference_id'] = $ref_id;
+		}
+		
+		$post['method'] = 'get_upload_status';
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_URL, $this->write_url);
+		curl_setopt($curl, CURLOPT_POST, 1);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		$response = curl_exec($curl);
+		
+		$this->api_calls++;
+		
+		if(curl_errno($curl))
+		{
+			$this->triggerError('004');
+			echo curl_error($curl);
+			return FALSE;
+		}
+		
+		curl_close($curl);
+		
+		$json = json_decode($response);
+
+		if($json->result)
+		{
+			return $json->result;
+		} else {
+			$this->triggerError('011');
+			return FALSE;
+		}
+	}
+	
+   /**
     * Uploads an image file to Brightcove
     * @access Public
     * @since 0.3.4
@@ -507,6 +581,9 @@ class Echove
 		if($video_id)
 		{
 			$params['video_id'] = $video_id;
+		} else {
+			$this->triggerError('008');
+			return FALSE;
 		}
 		
 		if($resize)
@@ -537,7 +614,7 @@ class Echove
 		
 		if(curl_errno($curl))
 		{
-			$this->triggerError('010');
+			$this->triggerError('012');
 			echo curl_error($curl);
 			return FALSE;
 		}
@@ -557,7 +634,7 @@ class Echove
 		{
 			return $json->result->id;
 		} else {
-			$this->triggerError('012');
+			$this->triggerError('011');
 			return FALSE;
 		}
 	}
@@ -758,7 +835,7 @@ class Echove
 			
 			$post['method'] = 'delete_playlist';
 		} else {
-			$this->triggerError('007');
+			$this->triggerError('006');
 			return FALSE;
 		}
 		
@@ -784,7 +861,79 @@ class Echove
 		
 		curl_close($curl);
 	}
+	
+   /**
+    * Shares a video with the selected accounts
+    * @access Public
+    * @since 0.3.9
+    * @param int [$video_id] The ID of the video asset
+    * @param array [$account_ids] An array of account IDs
+    * @param bool [$accept] Whether the share should be auto accepted
+    * @return array The new video IDs
+    */
+	public function shareVideo($video_id, $account_ids, $accept = FALSE)
+	{
+		if(!$this->token_write)
+		{
+			$this->triggerError('002');
+			return FALSE;
+		}
 		
+		if(!$video_id)
+		{
+			$this->triggerError('008');
+			return FALSE;
+		}
+		
+		$request = array();
+		$post = array();
+		$params = array();
+		
+		$params['token'] = $this->token_write;
+		$params['video_id'] = $video_id;
+		$params['sharee_account_ids'] = $account_ids;
+		
+		if($accept)
+		{
+			$params['auto_accept'] = 'TRUE';
+		} else {
+			$params['auto_accept'] = 'FALSE';
+		}
+		
+		$post['method'] = 'share_video';
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_URL, $this->write_url);
+		curl_setopt($curl, CURLOPT_POST, 1);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		$response = curl_exec($curl);
+		
+		$this->api_calls++;
+		
+		if(curl_errno($curl))
+		{
+			$this->triggerError('004');
+			echo curl_error($curl);
+			return FALSE;
+		}
+		
+		curl_close($curl);
+		
+		$json = json_decode($response);
+		
+		if($json->result)
+		{
+			return $json->result;
+		} else {
+			$this->triggerError('011');
+			return FALSE;
+		}
+	}
+	
    /**
     * Converts milliseconds to formatted time or seconds
     * @access Public
@@ -966,6 +1115,12 @@ class Echove
     */
 	public function embed($playerId, $videoIds = NULL, $params = NULL, $additional = NULL)
 	{
+		if(!$playerId)
+		{
+			$this->triggerError('008');
+			return FALSE;
+		}
+			
 		$values = array('id' => 'myExperience', 'bgcolor' => 'FFFFFF', 'width' => 486, 'height' => 412);
 
 		foreach($values as $key => $value)
@@ -1055,13 +1210,10 @@ class Echove
 					$type = 'WARNING';
 					break;
 				case '006':
-					$text = 'Update type not specified';
+					$text = 'Type not specified';
 					$type = 'WARNING';
 					break;
-				case '007':
-					$text = 'Deletion type not specified';
-					$type = 'WARNING';
-					break;
+				case '007': $text = ''; $type = ''; break;
 				case '008':
 					$text = 'ID not provided';
 					$type = 'WARNING';
