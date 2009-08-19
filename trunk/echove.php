@@ -12,8 +12,11 @@
  *     Matthew Congrove, Professional Services Engineer, Brightcove
  *     Brian Franklin, Professional Services Engineer, Brightcove
  * Version:
- *     Echove 0.3.9 (8 JULY 2009)
+ *     Echove 0.4.0 (19 AUGUST 2009)
  * Change Log:
+ *     0.4.0 - Provided better logic for createVideo method. Fixed
+ *             error reporting in createPlaylist, also included
+ *             check to determine if video IDs are being passed.
  *     0.3.9 - Added share_video and get_upload_status methods.
  *             Corrected error for find_modified_videos return.
  *             Updated error codes and reporting points.
@@ -418,11 +421,26 @@ class Echove
 		$params['token'] = $this->token_write;
 		$params['video'] = $video;
 		
-		if($multiple)
+		if(!isset($meta['create_multiple_renditions']))
 		{
-			$params['create_multiple_renditions'] = 'TRUE';
-		} else {
-			$params['create_multiple_renditions'] = 'FALSE';
+			if($multiple)
+			{
+				$params['create_multiple_renditions'] = 'TRUE';
+			} else {
+				$params['create_multiple_renditions'] = 'FALSE';
+			}
+		}
+		
+		if($file && isset($params['create_multiple_renditions']))
+		{
+			$extension = substr(strtolower($file), -3);
+			$vp6 = array('f4a', 'f4b', 'f4v', 'f4p', 'flv');
+			
+			if(in_array($extension, $vp6))
+			{
+				$params['create_multiple_renditions'] = 'FALSE';
+				$this->triggerError('013');
+			}
 		}
 		
 		$post['method'] = 'create_video';
@@ -669,9 +687,15 @@ class Echove
 			$playlist['referenceId'] = time();
 		}
 		
-		foreach($playlist['videoIds'] as $key => $value)
+		if(isset($playlist['videoIds']))
 		{
-			$playlist['videoIds'][$key] = (int)$value;
+			if($playlist['playlistType'] != 'explicit')
+			{
+				foreach($playlist['videoIds'] as $key => $value)
+				{
+					$playlist['videoIds'][$key] = (int)$value;
+				}
+			}
 		}
 		
 		$params['token'] = $this->token_write;
@@ -713,7 +737,7 @@ class Echove
 		{
 			return $json->result;
 		} else {
-			$this->error('011');
+			$this->triggerError('011');
 			return FALSE;
 		}
 	}
@@ -1231,6 +1255,9 @@ class Echove
 					$text = 'Image file transfer failed';
 					$type = 'WARNING';
 					break;
+				case '013':
+					$text = 'FLV files cannot have multiple renditions';
+					$type = 'NOTICE';
 			}
 			
 			if($type == 'NOTICE')
