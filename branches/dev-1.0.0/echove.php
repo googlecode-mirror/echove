@@ -11,9 +11,12 @@
  * Authors:
  *     Matthew Congrove, Professional Services Engineer, Brightcove
  *     Brian Franklin, Professional Services Engineer, Brightcove
+ * Community Contributors:
+ *     Luke Weber
  * Version:
- *     Echove 0.4.0 (19 AUGUST 2009)
+ *     Echove 1.0.0 (?)
  * Change Log:
+ *     1.0.0 - Added putData method.
  *     0.4.0 - Provided better logic for createVideo method. Fixed
  *             error reporting in createPlaylist, also included
  *             check to determine if video IDs are being passed.
