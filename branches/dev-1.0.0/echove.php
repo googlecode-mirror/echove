@@ -297,6 +297,435 @@ class Echove
 		
 		return $videos;
 	}
+	
+   /**
+    * Uploads a video file to Brightcove
+    * @access Public
+    * @since 0.3.0
+    * @param string [$file] The location of the temporary file
+    * @param array [$meta] The video information
+    * @param bool [$multiple] Whether or not to create multiple renditions
+    * @return mixed The video ID if successful, otherwise FALSE
+    */
+	public function createVideo($file = NULL, $meta, $multiple = FALSE)
+	{
+		if(!$this->token_write)
+		{
+			$this->triggerError('002');
+			return FALSE;
+		}
+
+		$request = array();
+		$post = array();
+		$params = array();
+		$video = array();
+		
+		foreach($meta as $key => $value)
+		{
+			$video[$key] = $value;
+		}
+		
+		if(!$video['referenceId'])
+		{
+			$video['referenceId'] = time();
+		}
+		
+		$params['token'] = $this->token_write;
+		$params['video'] = $video;
+		
+		if(!isset($meta['create_multiple_renditions']))
+		{
+			if($multiple)
+			{
+				$params['create_multiple_renditions'] = 'TRUE';
+			} else {
+				$params['create_multiple_renditions'] = 'FALSE';
+			}
+		}
+		
+		if($file && isset($params['create_multiple_renditions']))
+		{
+			$extension = substr(strtolower($file), -3);
+			$vp6 = array('f4a', 'f4b', 'f4v', 'f4p', 'flv');
+			
+			if(in_array($extension, $vp6))
+			{
+				$params['create_multiple_renditions'] = 'FALSE';
+				$this->triggerError('013');
+			}
+		}
+		
+		$post['method'] = 'create_video';
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		if($file)
+		{
+			$request['file'] = '@' . $file;
+		}
+		
+		$json = json_decode($this->putData($request));
+
+		if($json->result)
+		{
+			return $json->result;
+		} else {
+			$this->triggerError('011');
+			return FALSE;
+		}
+	}
+	
+   /**
+    * Retrieves the status of a video upload
+    * @access Public
+    * @since 0.3.9
+    * @param int [$video_id] The ID of the video asset
+    * @param string [$ref_id] The reference ID of the video asset
+    * @return string The upload status
+    */
+	public function getStatus($video_id = NULL, $ref_id = TRUE)
+	{
+		if(!$this->token_write)
+		{
+			$this->triggerError('002');
+			return FALSE;
+		}
+		
+		if(!$video_id && !$ref_id)
+		{
+			$this->triggerError('008');
+		}
+		
+		$request = array();
+		$post = array();
+		$params = array();
+		
+		$params['token'] = $this->token_write;
+		
+		if($video_id)
+		{
+			$params['video_id'] = $video_id;
+		}
+		
+		if($ref_id)
+		{
+			$params['reference_id'] = $ref_id;
+		}
+		
+		$post['method'] = 'get_upload_status';
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		$json = json_decode($this->putData($request));
+
+		if($json->result)
+		{
+			return $json->result;
+		} else {
+			$this->triggerError('011');
+			return FALSE;
+		}
+	}
+	
+   /**
+    * Uploads an image file to Brightcove
+    * @access Public
+    * @since 0.3.4
+    * @param string [$file] The location of the temporary file
+    * @param array [$meta] The image information
+    * @param int [$video_id] The ID of the video asset to assign the image to
+    * @param bool [$resize] Whether or not to resize the image on upload
+    * @return mixed The image asset ID if successful, otherwise FALSE
+    */
+	public function createImage($file = NULL, $meta, $video_id = NULL, $resize = TRUE)
+	{
+		if(!$this->token_write)
+		{
+			$this->triggerError('002');
+			return FALSE;
+		}
+		
+		$request = array();
+		$post = array();
+		$image = array();
+		$params = array();
+		
+		foreach($meta as $key => $value)
+		{
+			$image[$key] = $value;
+		}
+		
+		if(!$image['referenceId'])
+		{
+			$image['referenceId'] = time();
+		}
+		
+		$params['token'] = $this->token_write;
+		$params['image'] = $image;
+		
+		if($video_id)
+		{
+			$params['video_id'] = $video_id;
+		} else {
+			$this->triggerError('008');
+			return FALSE;
+		}
+		
+		if($resize)
+		{
+			$params['resize'] = 'TRUE';
+		} else {
+			$params['resize'] = 'FALSE';
+		}
+		
+		$post['method'] = 'add_image';
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		if($file)
+		{
+			$request['file'] = '@' . $file;
+		}
+		
+		$json = json_decode($this->putData($request));
+
+		if($json->result)
+		{
+			return $json->result->id;
+		} else {
+			$this->triggerError('011');
+			return FALSE;
+		}
+	}
+
+   /**
+    * Creates a playlist
+    * @access Public
+    * @since 0.3.0
+    * @param array [$meta] The playlist information
+    * @return mixed The playlist ID if successful, otherwise FALSE
+    */
+	public function createPlaylist($meta)
+	{
+		if(!$this->token_write)
+		{
+			$this->triggerError('002');
+			return FALSE;
+		}
+
+		$request = array();
+		$post = array();
+		$params = array();
+		$playlist = array();
+		
+		foreach($meta as $key => $value)
+		{
+			$playlist[$key] = $value;
+		}
+		
+		if(!$playlist['referenceId'])
+		{
+			$playlist['referenceId'] = time();
+		}
+		
+		if(isset($playlist['videoIds']))
+		{
+			if($playlist['playlistType'] != 'explicit')
+			{
+				foreach($playlist['videoIds'] as $key => $value)
+				{
+					$playlist['videoIds'][$key] = (int)$value;
+				}
+			}
+		}
+		
+		$params['token'] = $this->token_write;
+		$params['playlist'] = $playlist;
+		
+		$post['method'] = 'create_playlist';
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post);
+		
+		$json = json_decode($this->putData($request));
+
+		if($json->result)
+		{
+			return $json->result;
+		} else {
+			$this->triggerError('011');
+			return FALSE;
+		}
+	}
+	
+   /**
+    * Updates a video or playlist
+    * @access Public
+    * @since 0.3.0
+    * @param string [$type] The item to update, either a video or playlist
+    * @param array [$meta] The information for the video or playlist
+    */
+	public function update($type, $meta)
+	{
+		if(!$this->token_write)
+		{
+			$this->triggerError('002');
+			return FALSE;
+		}
+		
+		$request = array();
+		$post = array();
+		$params = array();
+		$metaData = array();
+
+		$params['token'] = $this->token_write;
+		
+		if(strtolower($type) == 'video')
+		{		
+			foreach($meta as $key => $value)
+			{
+				$metaData[$key] = $value;
+			}
+		
+			$params['video'] = $metaData;
+			$post['method'] = 'update_video';
+		} elseif(strtolower($type) == 'playlist') {	
+			foreach($meta as $key => $value)
+			{
+				$metaData[$key] = $value;
+			}
+				
+			$params['playlist'] = $metaData;
+			$post['method'] = 'update_playlist';
+		} else {
+			$this->triggerError('006');
+			return FALSE;
+		}
+		
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		$this->putData($request);
+	}
+	
+   /**
+    * Deletes a video or playlist
+    * @access Public
+    * @since 0.3.0
+    * @param string [$type] The item to delete, either a video or playlist
+    * @param int [$id] The ID of the video or playlist
+    * @param string [$ref_id] The reference ID of the video or playlist
+    * @param bool [$cascade] Whether or not to cascade the deletion
+    */
+	public function delete($type, $id = NULL, $ref_id = NULL, $cascade = TRUE)
+	{
+		if(!$this->token_write)
+		{
+			$this->triggerError('002');
+			return FALSE;
+		}
+		
+		$request = array();
+		$post = array();
+		$params = array();
+
+		$params['token'] = $this->token_write;
+		$params['cascade'] = $cascade;
+		
+		if(strtolower($type) == 'video')
+		{
+			if($id)
+			{
+				$params['video_id'] = $id;
+			} elseif($ref_id) {
+				$params['reference_id'] = $ref_id;
+			} else {
+				$this->triggerError('008');
+				return FALSE;
+			}
+			
+			$post['method'] = 'delete_video';
+		} elseif(strtolower($type) == 'playlist') {
+			if($id)
+			{
+				$params['playlist_id'] = $id;
+			} elseif($ref_id) {
+				$params['reference_id'] = $ref_id;
+			} else {
+				$this->triggerError('008');
+				return FALSE;
+			}
+			
+			$post['method'] = 'delete_playlist';
+		} else {
+			$this->triggerError('006');
+			return FALSE;
+		}
+		
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		$this->putData($request);
+	}
+	
+   /**
+    * Shares a video with the selected accounts
+    * @access Public
+    * @since 0.3.9
+    * @param int [$video_id] The ID of the video asset
+    * @param array [$account_ids] An array of account IDs
+    * @param bool [$accept] Whether the share should be auto accepted
+    * @return array The new video IDs
+    */
+	public function shareVideo($video_id, $account_ids, $accept = FALSE)
+	{
+		if(!$this->token_write)
+		{
+			$this->triggerError('002');
+			return FALSE;
+		}
+		
+		if(!$video_id)
+		{
+			$this->triggerError('008');
+			return FALSE;
+		}
+		
+		$request = array();
+		$post = array();
+		$params = array();
+		
+		$params['token'] = $this->token_write;
+		$params['video_id'] = $video_id;
+		$params['sharee_account_ids'] = $account_ids;
+		
+		if($accept)
+		{
+			$params['auto_accept'] = 'TRUE';
+		} else {
+			$params['auto_accept'] = 'FALSE';
+		}
+		
+		$post['method'] = 'share_video';
+		$post['params'] = $params;
+		
+		$request['json'] = json_encode($post) . "\n";
+		
+		$json = json_decode($this->putData($request));
+		
+		if($json->result)
+		{
+			return $json->result;
+		} else {
+			$this->triggerError('011');
+			return FALSE;
+		}
+	}
 
    /**
     * Appends API parameters onto API request URL
@@ -385,74 +814,16 @@ class Echove
 			return FALSE;
 		}
 	}
-	
-   /**
-    * Uploads a video file to Brightcove
-    * @access Public
-    * @since 0.3.0
-    * @param string [$file] The location of the temporary file
-    * @param array [$meta] The video information
-    * @param bool [$multiple] Whether or not to create multiple renditions
-    * @return mixed The video ID if successful, otherwise FALSE
-    */
-	public function createVideo($file = NULL, $meta, $multiple = FALSE)
-	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
 
-		$request = array();
-		$post = array();
-		$params = array();
-		$video = array();
-		
-		foreach($meta as $key => $value)
-		{
-			$video[$key] = $value;
-		}
-		
-		if(!$video['referenceId'])
-		{
-			$video['referenceId'] = time();
-		}
-		
-		$params['token'] = $this->token_write;
-		$params['video'] = $video;
-		
-		if(!isset($meta['create_multiple_renditions']))
-		{
-			if($multiple)
-			{
-				$params['create_multiple_renditions'] = 'TRUE';
-			} else {
-				$params['create_multiple_renditions'] = 'FALSE';
-			}
-		}
-		
-		if($file && isset($params['create_multiple_renditions']))
-		{
-			$extension = substr(strtolower($file), -3);
-			$vp6 = array('f4a', 'f4b', 'f4v', 'f4p', 'flv');
-			
-			if(in_array($extension, $vp6))
-			{
-				$params['create_multiple_renditions'] = 'FALSE';
-				$this->triggerError('013');
-			}
-		}
-		
-		$post['method'] = 'create_video';
-		$post['params'] = $params;
-		
-		$request['json'] = json_encode($post) . "\n";
-		
-		if($file)
-		{
-			$request['file'] = '@' . $file;
-		}
-		
+   /**
+    * Sends data to the API
+    * @access Private
+    * @since 1.0.0
+    * @param array [$request] The data to send
+    * @return object An object containing all API return data
+    */
+	private function putData($request)
+	{
 		$curl = curl_init();
 		curl_setopt($curl, CURLOPT_URL, $this->write_url);
 		curl_setopt($curl, CURLOPT_POST, 1);
@@ -464,8 +835,11 @@ class Echove
 		
 		if(curl_errno($curl))
 		{
-			$this->triggerError('010');
+			$this->triggerError(self::ERROR_WRITE_API_TRANSACTION_FAILED);
 			echo curl_error($curl);
+			
+			curl_close($curl);
+			
 			return FALSE;
 		}
 		
@@ -478,484 +852,7 @@ class Echove
 			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
 		}
 		
-		$json = json_decode($response);
-
-		if($json->result)
-		{
-			return $json->result;
-		} else {
-			$this->triggerError('011');
-			return FALSE;
-		}
-	}
-	
-   /**
-    * Retrieves the status of a video upload
-    * @access Public
-    * @since 0.3.9
-    * @param int [$video_id] The ID of the video asset
-    * @param string [$ref_id] The reference ID of the video asset
-    * @return string The upload status
-    */
-	public function getStatus($video_id = NULL, $ref_id = TRUE)
-	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-		
-		if(!$video_id && !$ref_id)
-		{
-			$this->triggerError('008');
-		}
-		
-		$request = array();
-		$post = array();
-		$params = array();
-		
-		$params['token'] = $this->token_write;
-		
-		if($video_id)
-		{
-			$params['video_id'] = $video_id;
-		}
-		
-		if($ref_id)
-		{
-			$params['reference_id'] = $ref_id;
-		}
-		
-		$post['method'] = 'get_upload_status';
-		$post['params'] = $params;
-		
-		$request['json'] = json_encode($post) . "\n";
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('004');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-		
-		$json = json_decode($response);
-
-		if($json->result)
-		{
-			return $json->result;
-		} else {
-			$this->triggerError('011');
-			return FALSE;
-		}
-	}
-	
-   /**
-    * Uploads an image file to Brightcove
-    * @access Public
-    * @since 0.3.4
-    * @param string [$file] The location of the temporary file
-    * @param array [$meta] The image information
-    * @param int [$video_id] The ID of the video asset to assign the image to
-    * @param bool [$resize] Whether or not to resize the image on upload
-    * @return mixed The image asset ID if successful, otherwise FALSE
-    */
-	public function createImage($file = NULL, $meta, $video_id = NULL, $resize = TRUE)
-	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-		
-		$request = array();
-		$post = array();
-		$image = array();
-		$params = array();
-		
-		foreach($meta as $key => $value)
-		{
-			$image[$key] = $value;
-		}
-		
-		if(!$image['referenceId'])
-		{
-			$image['referenceId'] = time();
-		}
-		
-		$params['token'] = $this->token_write;
-		$params['image'] = $image;
-		
-		if($video_id)
-		{
-			$params['video_id'] = $video_id;
-		} else {
-			$this->triggerError('008');
-			return FALSE;
-		}
-		
-		if($resize)
-		{
-			$params['resize'] = 'TRUE';
-		} else {
-			$params['resize'] = 'FALSE';
-		}
-		
-		$post['method'] = 'add_image';
-		$post['params'] = $params;
-		
-		$request['json'] = json_encode($post) . "\n";
-		
-		if($file)
-		{
-			$request['file'] = '@' . $file;
-		}
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('012');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-		
-		if($this->bit32)
-		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
-		}
-		
-		$json = json_decode($response);
-
-		if($json->result)
-		{
-			return $json->result->id;
-		} else {
-			$this->triggerError('011');
-			return FALSE;
-		}
-	}
-
-   /**
-    * Creates a playlist
-    * @access Public
-    * @since 0.3.0
-    * @param array [$meta] The playlist information
-    * @return mixed The playlist ID if successful, otherwise FALSE
-    */
-	public function createPlaylist($meta)
-	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-
-		$request = array();
-		$post = array();
-		$params = array();
-		$playlist = array();
-		
-		foreach($meta as $key => $value)
-		{
-			$playlist[$key] = $value;
-		}
-		
-		if(!$playlist['referenceId'])
-		{
-			$playlist['referenceId'] = time();
-		}
-		
-		if(isset($playlist['videoIds']))
-		{
-			if($playlist['playlistType'] != 'explicit')
-			{
-				foreach($playlist['videoIds'] as $key => $value)
-				{
-					$playlist['videoIds'][$key] = (int)$value;
-				}
-			}
-		}
-		
-		$params['token'] = $this->token_write;
-		$params['playlist'] = $playlist;
-		
-		$post['method'] = 'create_playlist';
-		$post['params'] = $params;
-		
-		$request['json'] = json_encode($post);
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('004');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-		
-		if($this->bit32)
-		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
-		}
-		
-		$json = json_decode($response);
-
-		if($json->result)
-		{
-			return $json->result;
-		} else {
-			$this->triggerError('011');
-			return FALSE;
-		}
-	}
-	
-   /**
-    * Updates a video or playlist
-    * @access Public
-    * @since 0.3.0
-    * @param string [$type] The item to update, either a video or playlist
-    * @param array [$meta] The information for the video or playlist
-    */
-	public function update($type, $meta)
-	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-		
-		$request = array();
-		$post = array();
-		$params = array();
-		$metaData = array();
-
-		$params['token'] = $this->token_write;
-		
-		if(strtolower($type) == 'video')
-		{		
-			foreach($meta as $key => $value)
-			{
-				$metaData[$key] = $value;
-			}
-		
-			$params['video'] = $metaData;
-			$post['method'] = 'update_video';
-		} elseif(strtolower($type) == 'playlist') {	
-			foreach($meta as $key => $value)
-			{
-				$metaData[$key] = $value;
-			}
-				
-			$params['playlist'] = $metaData;
-			$post['method'] = 'update_playlist';
-		} else {
-			$this->triggerError('006');
-			return FALSE;
-		}
-		
-		$post['params'] = $params;
-		
-		$request['json'] = json_encode($post) . "\n";
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('004');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-	}
-	
-   /**
-    * Deletes a video or playlist
-    * @access Public
-    * @since 0.3.0
-    * @param string [$type] The item to delete, either a video or playlist
-    * @param int [$id] The ID of the video or playlist
-    * @param string [$ref_id] The reference ID of the video or playlist
-    * @param bool [$cascade] Whether or not to cascade the deletion
-    */
-	public function delete($type, $id = NULL, $ref_id = NULL, $cascade = TRUE)
-	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-		
-		$request = array();
-		$post = array();
-		$params = array();
-
-		$params['token'] = $this->token_write;
-		$params['cascade'] = $cascade;
-		
-		if(strtolower($type) == 'video')
-		{
-			if($id)
-			{
-				$params['video_id'] = $id;
-			} elseif($ref_id) {
-				$params['reference_id'] = $ref_id;
-			} else {
-				$this->triggerError('008');
-				return FALSE;
-			}
-			
-			$post['method'] = 'delete_video';
-		} elseif(strtolower($type) == 'playlist') {
-			if($id)
-			{
-				$params['playlist_id'] = $id;
-			} elseif($ref_id) {
-				$params['reference_id'] = $ref_id;
-			} else {
-				$this->triggerError('008');
-				return FALSE;
-			}
-			
-			$post['method'] = 'delete_playlist';
-		} else {
-			$this->triggerError('006');
-			return FALSE;
-		}
-		
-		$post['params'] = $params;
-		
-		$request['json'] = json_encode($post) . "\n";
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('004');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-	}
-	
-   /**
-    * Shares a video with the selected accounts
-    * @access Public
-    * @since 0.3.9
-    * @param int [$video_id] The ID of the video asset
-    * @param array [$account_ids] An array of account IDs
-    * @param bool [$accept] Whether the share should be auto accepted
-    * @return array The new video IDs
-    */
-	public function shareVideo($video_id, $account_ids, $accept = FALSE)
-	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-		
-		if(!$video_id)
-		{
-			$this->triggerError('008');
-			return FALSE;
-		}
-		
-		$request = array();
-		$post = array();
-		$params = array();
-		
-		$params['token'] = $this->token_write;
-		$params['video_id'] = $video_id;
-		$params['sharee_account_ids'] = $account_ids;
-		
-		if($accept)
-		{
-			$params['auto_accept'] = 'TRUE';
-		} else {
-			$params['auto_accept'] = 'FALSE';
-		}
-		
-		$post['method'] = 'share_video';
-		$post['params'] = $params;
-		
-		$request['json'] = json_encode($post) . "\n";
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('004');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-		
-		$json = json_decode($response);
-		
-		if($json->result)
-		{
-			return $json->result;
-		} else {
-			$this->triggerError('011');
-			return FALSE;
-		}
+		return $response;
 	}
 	
    /**
