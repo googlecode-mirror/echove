@@ -1,76 +1,63 @@
 <?php
 
 /**
- * ECHOVE
+ * ECHOVE 1.0.0 (24 AUGUST 2009)
  * A Brightcove PHP SDK
  * 
- * Official Website:
- *     http://echove.net/
+ * REFERENCES:
+ *     Official Website: http://echove.net/
+ *     Code Repository: http://code.google.com/p/echove/
  *
- * Code Repository:
- *     http://code.google.com/p/echove/
- *
- * Authors:
+ * AUTHORS:
  *     Matthew Congrove, Professional Services Engineer, Brightcove
  *     Brian Franklin, Professional Services Engineer, Brightcove
  *
- * Community Contributors:
- *     Luke Weber
+ * CONTRIBUTORS:
+ *     Jesse Streb, Kristen McGregor, Luke Weber
  *
- * Version:
- *     Echove 1.0.0 (24 AUGUST 2009)
- *
- * Change Log:
+ * CHANGE LOG:
  *     1.0.0 - Added putData method. Improved error reporting.
- *     0.4.0 - Provided better logic for createVideo method. Fixed
- *             error reporting in createPlaylist, also included
- *             check to determine if video IDs are being passed.
- *     0.3.9 - Added share_video and get_upload_status methods.
- *             Corrected error for find_modified_videos return.
- *             Updated error codes and reporting points.
- *     0.3.8 - Improved debugging. Added new API find call, and
- *             get_item_count is now assumed as TRUE.
+ *     0.4.0 - Provided better logic for createVideo method. Fixed error reporting in
+ *             createPlaylist, also included check to determine if video IDs are being
+ *             passed.
+ *     0.3.9 - Added share_video and get_upload_status methods. Corrected error for
+ *             find_modified_videos return. Updated error codes and reporting points.
+ *     0.3.8 - Improved debugging. Added new API find call, and get_item_count is now
+ *             assumed as TRUE.
  *     0.3.7 - Fixed major error in Find method.
- *     0.3.6 - Added debug information, video tag filtering, and
- *             a true Find All Videos function.
- *     0.3.5 - Added support for 32-bit servers. Error reporting
- *             can now be configured during instantiation. Fixed
- *             URL encoding issue. Added support for tag arrays.
+ *     0.3.6 - Added debug information, video tag filtering, and a true Find All Videos
+ *             function.
+ *     0.3.5 - Added support for 32-bit servers. Error reporting can now be configured
+ *             during instantiation. Fixed URL encoding issue. Added support for tag
+ *             arrays.
  *     0.3.4 - Improved error reporting. Added image upload.
  *     0.3.3 - Fixed RTMP to HTTP URL function. Fixed video upload.
- *     0.3.2 - Added RTMP to HTTP URL function, and function to
- *             easily parse video tags. Improved SEF function.
- *             Added support for remote assets.
+ *     0.3.2 - Added RTMP to HTTP URL function, and function to easily parse video tags.
+ *             Improved SEF function. Added support for remote assets.
  *     0.3.1 - Improved error reporting.
- *     0.3.0 - Added Write API methods for creating, updating, and
- *             deleting both videos and playlists.
- *     0.2.2 - Fix to remove notices. Added embed method. Corrected
- *             video lengths.
- *     0.2.1 - Setting default values to remove notices. Added inline
- *             code documentation. Added utilities to convert video
- *             lengths from milliseconds to formatted time or seconds
- *             for ease of use and to convert video names to a
- *             search-engine friendly format.
+ *     0.3.0 - Added Write API methods for creating, updating, and deleting both videos
+ *             and playlists.
+ *     0.2.2 - Fix to remove notices. Added embed method. Corrected video lengths.
+ *     0.2.1 - Setting default values to remove notices. Added inline code documentation.
+ *             Added utilities to convert video lengths from milliseconds to formatted
+ *             time or secondsfor ease of use and to convert video names to a search-
+ *             engine friendly format.
  *     0.2.0 - Updated to include API return properties.
  *     0.1.0 - Initial release.
  * 
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or
- * sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+ * software and associated documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following
  * conditions:
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+ * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 class Echove
