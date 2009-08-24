@@ -6,17 +6,22 @@
  * 
  * Official Website:
  *     http://echove.net/
+ *
  * Code Repository:
  *     http://code.google.com/p/echove/
+ *
  * Authors:
  *     Matthew Congrove, Professional Services Engineer, Brightcove
  *     Brian Franklin, Professional Services Engineer, Brightcove
+ *
  * Community Contributors:
  *     Luke Weber
+ *
  * Version:
- *     Echove 1.0.0 (?)
+ *     Echove 1.0.0 (24 AUGUST 2009)
+ *
  * Change Log:
- *     1.0.0 - Added putData method.
+ *     1.0.0 - Added putData method. Improved error reporting.
  *     0.4.0 - Provided better logic for createVideo method. Fixed
  *             error reporting in createPlaylist, also included
  *             check to determine if video IDs are being passed.
@@ -70,6 +75,17 @@
 
 class Echove
 {
+	const ERROR_READ_TOKEN_NOT_PROVIDED = 1;
+	const ERROR_WRITE_TOKEN_NOT_PROVIDED = 2;
+	const ERROR_REQUESTED_METHOD_NOT_FOUND = 3;
+	const ERROR_READ_API_TRANSACTION_FAILED = 4;
+	const ERROR_WRITE_API_TRANSACTION_FAILED = 5;
+	const ERROR_ID_NOT_PROVIDED = 8;
+	const ERROR_TYPE_NOT_SPECIFIED = 9;
+	const ERROR_FLV_MULTIPLE_RENDITION = 10;
+	const ERROR_UNKNOWN_API_ERROR = 11;
+	const ERROR_TYPE_WARNING = 0;
+	const ERROR_TYPE_NOTICE = 1;
 
    /**
     * @access Public
@@ -93,7 +109,7 @@ class Echove
 
 		if(!$token_read)
 		{
-			$this->triggerError('001');
+			$this->triggerError(self::ERROR_READ_TOKEN_NOT_PROVIDED);
 			return FALSE;
 		}
 	}
@@ -196,7 +212,7 @@ class Echove
 				$get_item_count = TRUE;
 				break;
 			default:
-				$this->triggerError('005');
+				$this->triggerError(self::ERROR_REQUESTED_METHOD_NOT_FOUND);
 				return FALSE;
 				break;
 		}
@@ -246,7 +262,7 @@ class Echove
 		
 		if($result->error)
 		{
-			$this->triggerError('11');
+			$this->triggerError(self::ERROR_UNKNOWN_API_ERROR);
 			return FALSE;
 		} else {
 			return $result;
@@ -286,7 +302,7 @@ class Echove
 			
 			if($result->error)
 			{
-				$this->triggerError('011');
+				$this->triggerError(self::ERROR_UNKNOWN_API_ERROR);
 				return FALSE;
 			} else {
 				foreach($result as $video)
@@ -314,7 +330,7 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			$this->triggerError('002');
+			$this->triggerError(self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
 			return FALSE;
 		}
 
@@ -354,7 +370,7 @@ class Echove
 			if(in_array($extension, $vp6))
 			{
 				$params['create_multiple_renditions'] = 'FALSE';
-				$this->triggerError('013');
+				$this->triggerError(self::ERROR_FLV_MULTIPLE_RENDITION);
 			}
 		}
 		
@@ -374,7 +390,7 @@ class Echove
 		{
 			return $json->result;
 		} else {
-			$this->triggerError('011');
+			$this->triggerError(self::ERROR_UNKNOWN_API_ERROR);
 			return FALSE;
 		}
 	}
@@ -391,13 +407,13 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			$this->triggerError('002');
+			$this->triggerError(self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
 			return FALSE;
 		}
 		
 		if(!$video_id && !$ref_id)
 		{
-			$this->triggerError('008');
+			$this->triggerError(self::ERROR_ID_NOT_PROVIDED);
 		}
 		
 		$request = array();
@@ -427,7 +443,7 @@ class Echove
 		{
 			return $json->result;
 		} else {
-			$this->triggerError('011');
+			$this->triggerError(self::ERROR_UNKNOWN_API_ERROR);
 			return FALSE;
 		}
 	}
@@ -446,7 +462,7 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			$this->triggerError('002');
+			$this->triggerError(self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
 			return FALSE;
 		}
 		
@@ -472,7 +488,7 @@ class Echove
 		{
 			$params['video_id'] = $video_id;
 		} else {
-			$this->triggerError('008');
+			$this->triggerError(self::ERROR_ID_NOT_PROVIDED);
 			return FALSE;
 		}
 		
@@ -499,7 +515,7 @@ class Echove
 		{
 			return $json->result->id;
 		} else {
-			$this->triggerError('011');
+			$this->triggerError(self::ERROR_UNKNOWN_API_ERROR);
 			return FALSE;
 		}
 	}
@@ -515,7 +531,7 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			$this->triggerError('002');
+			$this->triggerError(self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
 			return FALSE;
 		}
 
@@ -559,7 +575,7 @@ class Echove
 		{
 			return $json->result;
 		} else {
-			$this->triggerError('011');
+			$this->triggerError(self::ERROR_UNKNOWN_API_ERROR);
 			return FALSE;
 		}
 	}
@@ -575,7 +591,7 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			$this->triggerError('002');
+			$this->triggerError(self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
 			return FALSE;
 		}
 		
@@ -604,7 +620,7 @@ class Echove
 			$params['playlist'] = $metaData;
 			$post['method'] = 'update_playlist';
 		} else {
-			$this->triggerError('006');
+			$this->triggerError(self::ERROR_TYPE_NOT_SPECIFIED);
 			return FALSE;
 		}
 		
@@ -628,7 +644,7 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			$this->triggerError('002');
+			$this->triggerError(self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
 			return FALSE;
 		}
 		
@@ -647,7 +663,7 @@ class Echove
 			} elseif($ref_id) {
 				$params['reference_id'] = $ref_id;
 			} else {
-				$this->triggerError('008');
+				$this->triggerError(self::ERROR_ID_NOT_PROVIDED);
 				return FALSE;
 			}
 			
@@ -659,13 +675,13 @@ class Echove
 			} elseif($ref_id) {
 				$params['reference_id'] = $ref_id;
 			} else {
-				$this->triggerError('008');
+				$this->triggerError(self::ERROR_ID_NOT_PROVIDED);
 				return FALSE;
 			}
 			
 			$post['method'] = 'delete_playlist';
 		} else {
-			$this->triggerError('006');
+			$this->triggerError(self::ERROR_TYPE_NOT_SPECIFIED);
 			return FALSE;
 		}
 		
@@ -689,13 +705,13 @@ class Echove
 	{
 		if(!$this->token_write)
 		{
-			$this->triggerError('002');
+			$this->triggerError(self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
 			return FALSE;
 		}
 		
 		if(!$video_id)
 		{
-			$this->triggerError('008');
+			$this->triggerError(self::ERROR_ID_NOT_PROVIDED);
 			return FALSE;
 		}
 		
@@ -725,7 +741,7 @@ class Echove
 		{
 			return $json->result;
 		} else {
-			$this->triggerError('011');
+			$this->triggerError(self::ERROR_UNKNOWN_API_ERROR);
 			return FALSE;
 		}
 	}
@@ -777,7 +793,7 @@ class Echove
 
 		if(curl_errno($curl))
 		{
-			$this->triggerError('003');
+			$this->triggerError(self::ERROR_READ_API_TRANSACTION_FAILED);
 			echo curl_error($curl);
 			return FALSE;
 		}
@@ -813,7 +829,7 @@ class Echove
 				return FALSE;
 			}
 		} else {
-			$this->triggerError('003');
+			$this->triggerError(self::ERROR_READ_API_TRANSACTION_FAILED);
 			return FALSE;
 		}
 	}
@@ -1041,7 +1057,7 @@ class Echove
 	{
 		if(!$playerId)
 		{
-			$this->triggerError('008');
+			$this->triggerError(self::ERROR_ID_NOT_PROVIDED);
 			return FALSE;
 		}
 			
@@ -1113,60 +1129,51 @@ class Echove
 		{
 			switch($err_code)
 			{
-				case '001':
+				case self::ERROR_READ_TOKEN_NOT_PROVIDED:
 					$text = 'Read token not provided';
-					$type = 'WARNING';
+					$type = self::ERROR_TYPE_WARNING;
 					break;
-				case '002':
+				case self::ERROR_WRITE_TOKEN_NOT_PROVIDED:
 					$text = 'Write token not provided';
-					$type = 'WARNING';
+					$type = self::ERROR_TYPE_WARNING;
 					break;
-				case '003':
-					$text = 'Read API transaction failed';
-					$type = 'NOTICE';
-					break;
-				case '004':
-					$text = 'Write API transaction failed';
-					$type = 'WARNING';
-					break;
-				case '005':
+				case self::ERROR_REQUESTED_METHOD_NOT_FOUND:
 					$text = 'Requested method not found';
-					$type = 'WARNING';
+					$type = self::ERROR_TYPE_WARNING;
 					break;
-				case '006':
-					$text = 'Type not specified';
-					$type = 'WARNING';
+				case self::ERROR_READ_API_TRANSACTION_FAILED:
+					$text = 'Read API transaction failed';
+					$type = self::ERROR_TYPE_NOTICE;
 					break;
-				case '007': $text = ''; $type = ''; break;
-				case '008':
+				case self::ERROR_WRITE_API_TRANSACTION_FAILED:
+					$text = 'Write API transaction failed';
+					$type = self::ERROR_TYPE_WARNING;
+					break;
+				case self::ERROR_ID_NOT_PROVIDED:
 					$text = 'ID not provided';
-					$type = 'WARNING';
+					$type = self::ERROR_TYPE_WARNING;
 					break;
-				case '009': $text = ''; $type = ''; break;
-				case '010':
-					$text = 'Media file transfer failed';
-					$type = 'WARNING';
+				case self::ERROR_TYPE_NOT_SPECIFIED:
+					$text = 'Type not specified';
+					$type = self::ERROR_TYPE_WARNING;
 					break;
-				case '011':
-					$text = 'Unknown API error';
-					$type = 'WARNING';
-					break;
-				case '012':
-					$text = 'Image file transfer failed';
-					$type = 'WARNING';
-					break;
-				case '013':
+				case self::ERROR_FLV_MULTIPLE_RENDITION:
 					$text = 'FLV files cannot have multiple renditions';
-					$type = 'NOTICE';
+					$type = self::ERROR_TYPE_NOTICE;
+					break;
+				case self::ERROR_UNKNOWN_API_ERROR:
+					$text = 'Unknown API error';
+					$type = self::ERROR_TYPE_WARNING;
+					break;
 			}
 			
-			if($type == 'NOTICE')
+			if($type === self::ERROR_TYPE_NOTICE)
 			{
 				trigger_error(' [ECHOVE-' . $err_code . '] ' . $text . ' ', E_USER_NOTICE);
-			} elseif($type == 'WARNING') {
+			} elseif($type === self::ERROR_TYPE_WARNING) {
 				trigger_error(' [ECHOVE-' . $err_code . '] ' . $text . ' ', E_USER_WARNING);
 			} else {
-				// Deprecated, do nothing
+				// Do nothing
 			}
 		}
 	}
