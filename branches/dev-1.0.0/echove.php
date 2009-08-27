@@ -86,13 +86,13 @@ class Echove
 	private $total_count = NULL;
 	private $api_calls = 0;
 
-   /**
-	* @access Public
-	* @since 0.1.0
-	* @param string [$token_read] The read API token for the Brightcove account
-	* @param string [$token_write] The write API token for the Brightcove account
-	* @param bool [$show_errors] Whether or not to show Echove errors
-	*/
+	/**
+	 * @access Public
+	 * @since 0.1.0
+	 * @param string [$token_read] The read API token for the Brightcove account
+	 * @param string [$token_write] The write API token for the Brightcove account
+	 * @param bool [$show_errors] Whether or not to show Echove errors
+	 */
 	public function __construct($token_read, $token_write = NULL, $show_errors = FALSE)
 	{
 		$this->token_read = $token_read;
@@ -106,14 +106,14 @@ class Echove
 		}
 	}
 
-   /**
-	* Formats the API request URL, retrieves the data, and returns it.
-	* @access Public
-	* @since 0.1.0
-	* @param string [$call] The requested API method
-	* @param array [$params] A key-value array of API parameters and values
-	* @return object An object containing all API return data
-	*/
+	/**
+	 * Formats the API request URL, retrieves the data, and returns it.
+	 * @access Public
+	 * @since 0.1.0
+	 * @param string [$call] The requested API method
+	 * @param array [$params] A key-value array of API parameters and values
+	 * @return object An object containing all API return data
+	 */
 	public function find($call, $params = NULL)
 	{
 		$call = strtolower(preg_replace('/(?:find|_)+/i', '', $call));
@@ -251,13 +251,13 @@ class Echove
 		return $this->getData($url);
 	}
 
-   /**
-	* Finds all videos in account, ignoring pagination
-	* @access Public
-	* @since 0.3.6
-	* @param array [$params] A key-value array of API parameters and values
-	* @return object An object containing all API return data
-	*/
+	/**
+	 * Finds all videos in account, ignoring pagination
+	 * @access Public
+	 * @since 0.3.6
+	 * @param array [$params] A key-value array of API parameters and values
+	 * @return object An object containing all API return data
+	 */
 	public function findAll($params = NULL)
 	{
 		$videos = array();
@@ -293,15 +293,15 @@ class Echove
 		return $videos;
 	}
 
-   /**
-	* Uploads a video file to Brightcove
-	* @access Public
-	* @since 0.3.0
-	* @param string [$file] The location of the temporary file
-	* @param array [$meta] The video information
-	* @param bool [$multiple] Whether or not to create multiple renditions
-	* @return mixed The video ID if successful, otherwise FALSE
-	*/
+	/**
+	 * Uploads a video file to Brightcove
+	 * @access Public
+	 * @since 0.3.0
+	 * @param string [$file] The location of the temporary file
+	 * @param array [$meta] The video information
+	 * @param bool [$multiple] Whether or not to create multiple renditions
+	 * @return mixed The video ID if successful, otherwise FALSE
+	 */
 	public function createVideo($file = NULL, $meta, $multiple = FALSE)
 	{
 		if(!$this->token_write)
@@ -361,14 +361,14 @@ class Echove
 		return $this->putData()->result;
 	}
 
-   /**
-	* Retrieves the status of a video upload
-	* @access Public
-	* @since 0.3.9
-	* @param int [$video_id] The ID of the video asset
-	* @param string [$ref_id] The reference ID of the video asset
-	* @return string The upload status
-	*/
+	/**
+	 * Retrieves the status of a video upload
+	 * @access Public
+	 * @since 0.3.9
+	 * @param int [$video_id] The ID of the video asset
+	 * @param string [$ref_id] The reference ID of the video asset
+	 * @return string The upload status
+	 */
 	public function getStatus($video_id = NULL, $ref_id = TRUE)
 	{
 		if(!$this->token_write)
@@ -405,16 +405,16 @@ class Echove
 		return $this->putData($request)->result;
 	}
 
-   /**
-	* Uploads an image file to Brightcove
-	* @access Public
-	* @since 0.3.4
-	* @param string [$file] The location of the temporary file
-	* @param array [$meta] The image information
-	* @param int [$video_id] The ID of the video asset to assign the image to
-	* @param bool [$resize] Whether or not to resize the image on upload
-	* @return mixed The image asset ID if successful, otherwise FALSE
-	*/
+	/**
+	 * Uploads an image file to Brightcove
+	 * @access Public
+	 * @since 0.3.4
+	 * @param string [$file] The location of the temporary file
+	 * @param array [$meta] The image information
+	 * @param int [$video_id] The ID of the video asset to assign the image to
+	 * @param bool [$resize] Whether or not to resize the image on upload
+	 * @return mixed The image asset ID if successful, otherwise FALSE
+	 */
 	public function createImage($file = NULL, $meta, $video_id = NULL, $resize = TRUE)
 	{
 		if(!$this->token_write)
@@ -467,13 +467,13 @@ class Echove
 		return $this->putData($request)->result->id;
 	}
 
-   /**
-	* Creates a playlist
-	* @access Public
-	* @since 0.3.0
-	* @param array [$meta] The playlist information
-	* @return mixed The playlist ID if successful, otherwise FALSE
-	*/
+	/**
+	 * Creates a playlist
+	 * @access Public
+	 * @since 0.3.0
+	 * @param array [$meta] The playlist information
+	 * @return mixed The playlist ID if successful, otherwise FALSE
+	 */
 	public function createPlaylist($meta)
 	{
 		if(!$this->token_write)
@@ -518,13 +518,13 @@ class Echove
 		return $this->putData($request)->result;
 	}
 
-   /**
-	* Updates a video or playlist
-	* @access Public
-	* @since 0.3.0
-	* @param string [$type] The item to update, either a video or playlist
-	* @param array [$meta] The information for the video or playlist
-	*/
+	/**
+	 * Updates a video or playlist
+	 * @access Public
+	 * @since 0.3.0
+	 * @param string [$type] The item to update, either a video or playlist
+	 * @param array [$meta] The information for the video or playlist
+	 */
 	public function update($type, $meta)
 	{
 		if(!$this->token_write)
@@ -567,15 +567,15 @@ class Echove
 		return $this->putData($request, FALSE);
 	}
 
-   /**
-	* Deletes a video or playlist
-	* @access Public
-	* @since 0.3.0
-	* @param string [$type] The item to delete, either a video or playlist
-	* @param int [$id] The ID of the video or playlist
-	* @param string [$ref_id] The reference ID of the video or playlist
-	* @param bool [$cascade] Whether or not to cascade the deletion
-	*/
+	/**
+	 * Deletes a video or playlist
+	 * @access Public
+	 * @since 0.3.0
+	 * @param string [$type] The item to delete, either a video or playlist
+	 * @param int [$id] The ID of the video or playlist
+	 * @param string [$ref_id] The reference ID of the video or playlist
+	 * @param bool [$cascade] Whether or not to cascade the deletion
+	 */
 	public function delete($type, $id = NULL, $ref_id = NULL, $cascade = TRUE)
 	{
 		if(!$this->token_write)
@@ -625,15 +625,15 @@ class Echove
 		return $this->putData($request, FALSE);
 	}
 
-   /**
-	* Shares a video with the selected accounts
-	* @access Public
-	* @since 0.3.9
-	* @param int [$video_id] The ID of the video asset
-	* @param array [$account_ids] An array of account IDs
-	* @param bool [$accept] Whether the share should be auto accepted
-	* @return array The new video IDs
-	*/
+	/**
+	 * Shares a video with the selected accounts
+	 * @access Public
+	 * @since 0.3.9
+	 * @param int [$video_id] The ID of the video asset
+	 * @param array [$account_ids] An array of account IDs
+	 * @param bool [$accept] Whether the share should be auto accepted
+	 * @return array The new video IDs
+	 */
 	public function shareVideo($video_id, $account_ids, $accept = FALSE)
 	{
 		if(!$this->token_write)
@@ -669,15 +669,15 @@ class Echove
 		return $this->putData($request)->result;
 	}
 
-   /**
-	* Appends API parameters onto API request URL
-	* @access Private
-	* @since 0.1.0
-	* @param string [$method] The requested API method
-	* @param array [$params] A key-value array of API parameters and values
-	* @param string [$default] The default API parameter if only 1 provided
-	* @return string The complete API request URL
-	*/
+	/**
+	 * Appends API parameters onto API request URL
+	 * @access Private
+	 * @since 0.1.0
+	 * @param string [$method] The requested API method
+	 * @param array [$params] A key-value array of API parameters and values
+	 * @param string [$default] The default API parameter if only 1 provided
+	 * @return string The complete API request URL
+	 */
 	private function appendParams($method, $params = NULL, $default = NULL)
 	{
 		$url = $this->read_url . 'token=' . $this->token_read . '&command=' . $method;
@@ -698,13 +698,13 @@ class Echove
 		return $url;
 	}
 
-   /**
-	* Retrieves API data from provided URL
-	* @access Private
-	* @since 0.1.0
-	* @param string [$url] The complete API request URL
-	* @return object An object containing all API return data
-	*/
+	/**
+	 * Retrieves API data from provided URL
+	 * @access Private
+	 * @since 0.1.0
+	 * @param string [$url] The complete API request URL
+	 * @return object An object containing all API return data
+	 */
 	private function getData($url)
 	{
 
@@ -736,13 +736,13 @@ class Echove
 	}
 
 
-   /**
-	* Sends data to the API
-	* @access Private
-	* @since 1.0.0
-	* @param array [$request] The data to send
-	* @return object An object containing all API return data
-	*/
+	/**
+	 * Sends data to the API
+	 * @access Private
+	 * @since 1.0.0
+	 * @param array [$request] The data to send
+	 * @return object An object containing all API return data
+	 */
 	private function putData($request, $return_json = TRUE)
 	{
 		$response = $this->curlRequest($request, FALSE);
@@ -825,14 +825,14 @@ class Echove
 		return $response;
 	}
 
-   /**
-	* Converts milliseconds to formatted time or seconds
-	* @access Public
-	* @since 0.2.1
-	* @param int [$ms] The length of the video in milliseconds
-	* @param bool [$seconds] Whether to return only seconds
-	* @return mixed The formatted length or total seconds of the video
-	*/
+	/**
+	 * Converts milliseconds to formatted time or seconds
+	 * @access Public
+	 * @since 0.2.1
+	 * @param int [$ms] The length of the video in milliseconds
+	 * @param bool [$seconds] Whether to return only seconds
+	 * @return mixed The formatted length or total seconds of the video
+	 */
 	public function time($ms, $seconds = FALSE)
 	{
 		$total_seconds = ($ms / 1000);
@@ -877,13 +877,13 @@ class Echove
 		}
 	}
 
-   /**
-	* Parses video tags array into a key-value array
-	* @access Public
-	* @since 0.3.2
-	* @param array [$tags] The tags array from a video DTO
-	* @return array A key-value array of tags
-	*/
+	/**
+	 * Parses video tags array into a key-value array
+	 * @access Public
+	 * @since 0.3.2
+	 * @param array [$tags] The tags array from a video DTO
+	 * @return array A key-value array of tags
+	 */
 	public function tags($tags)
 	{
 		$return = array();
@@ -918,14 +918,14 @@ class Echove
 		return $return;
 	}
 
-   /**
-	* Removes videos that don't contain the appropriate tags
-	* @access Public
-	* @since 0.3.6
-	* @param array [$videos] All the videos you wish to filter
-	* @param string [$tag] A comma-separated list of tags to filter on
-	* @return array The filtered list of videos
-	*/
+	/**
+	 * Removes videos that don't contain the appropriate tags
+	 * @access Public
+	 * @since 0.3.6
+	 * @param array [$videos] All the videos you wish to filter
+	 * @param string [$tag] A comma-separated list of tags to filter on
+	 * @return array The filtered list of videos
+	 */
 	public function filter($videos, $tags)
 	{
 		$filtered = array();
@@ -941,13 +941,13 @@ class Echove
 		return $filtered;
 	}
 
-   /**
-	* Formats a video name to be search-engine friendly
-	* @access Public
-	* @since 0.2.1
-	* @param string [$name] The video name
-	* @return string The SEF video name
-	*/
+	/**
+	 * Formats a video name to be search-engine friendly
+	 * @access Public
+	 * @since 0.2.1
+	 * @param string [$name] The video name
+	 * @return string The SEF video name
+	 */
 	public function sef($name)
 	{
 		$name = preg_replace('/[^a-zA-Z0-9\s]+/', '', $name);
@@ -956,13 +956,13 @@ class Echove
 		return $name;
 	}
 
-   /**
-	* Retrieves the HTTP URL from a streaming asset (RTMP).
-	* @access Public
-	* @since 0.3.2
-	* @param string [$flvUrl] The RTMP FLV URL of an asset
-	* @return string The HTTP URL of an asset
-	*/
+	/**
+	 * Retrieves the HTTP URL from a streaming asset (RTMP).
+	 * @access Public
+	 * @since 0.3.2
+	 * @param string [$flvUrl] The RTMP FLV URL of an asset
+	 * @return string The HTTP URL of an asset
+	 */
 	public function downloadUrl($flvUrl)
 	{
 		$return = '';
@@ -992,16 +992,16 @@ class Echove
 		return $return;
 	}
 
-   /**
-	* Returns the JavaScript version of the player embed code
-	* @access Public
-	* @since 0.2.2
-	* @param int [$playerId] The ID of the player to embed
-	* @param mixed [$videoIds] The ID of the default video, or an array of video IDs
-	* @param array [$params] A key-value array of embed parameters
-	* @param array [$additional] A key-value array of additional embed parameters
-	* @return string The embed code
-	*/
+	/**
+	 * Returns the JavaScript version of the player embed code
+	 * @access Public
+	 * @since 0.2.2
+	 * @param int [$playerId] The ID of the player to embed
+	 * @param mixed [$videoIds] The ID of the default video, or an array of video IDs
+	 * @param array [$params] A key-value array of embed parameters
+	 * @param array [$additional] A key-value array of additional embed parameters
+	 * @return string The embed code
+	 */
 	public function embed($playerId, $videoIds = NULL, $params = NULL, $additional = NULL)
 	{
 		if(!$playerId)
@@ -1065,12 +1065,12 @@ class Echove
 		return $code;
 	}
 
-   /**
-	* Triggers an error if errors are enabled
-	* @access Private
-	* @since 0.3.1
-	* @param string [$err_code] The code number of an error
-	*/
+	/**
+	 * Triggers an error if errors are enabled
+	 * @access Private
+	 * @since 0.3.1
+	 * @param string [$err_code] The code number of an error
+	 */
 	private function triggerError($err_code)
 	{
 		if($this->show_errors === TRUE){
