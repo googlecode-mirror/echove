@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0 (24 AUGUST 2009)
+ * ECHOVE 1.0.0c (27 AUGUST 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -16,7 +16,8 @@
  *	 Jesse Streb, Kristen McGregor, Luke Weber
  *
  * CHANGE LOG:
- *	 1.0.0 - Added putData method. Improved error reporting.
+ *	 1.0.0 - Added putData method. Added error exceptions. Unified request logic. Other
+ *			 efficiency improvements.
  *	 0.4.0 - Provided better logic for createVideo method. Fixed error reporting in
  *			 createPlaylist, also included check to determine if video IDs are being
  *			 passed.
@@ -242,7 +243,8 @@ class Echove
 			}
 		}
 
-		if($default && !is_array($params)) {
+		if($default && !is_array($params))
+		{
 			$url = $this->appendParams($method, $params, $default);
 		} else {
 			$url = $this->appendParams($method, $params);
@@ -339,7 +341,7 @@ class Echove
 
 		if($file && isset($params['create_multiple_renditions']))
 		{
-			$invalid_extensions = preg_match('/.*?[f4a|f4b|f4v|f4p|flv]$/i',$file);
+			$invalid_extensions = preg_match('/.*?[f4a|f4b|f4v|f4p|flv]$/i', $file);
 
 			if($invalid_extensions)
 			{
@@ -591,6 +593,7 @@ class Echove
 		$params['cascade'] = $cascade;
 
 		$type = strtolower($type);
+		
 		if($type == 'video')
 		{
 			if($id)
@@ -707,14 +710,14 @@ class Echove
 	 */
 	private function getData($url)
 	{
-
-		$response = $this->curlRequest($url, true);
+		$response = $this->curlRequest($url, TRUE);
 
 		if($response && $response != 'NULL')
 		{
 			$response_object = json_decode($response);
 
-			if($response_object->error){
+			if($response_object->error)
+			{
 				throw new EchoveAPIError($this, self::ERROR_UNKNOWN_API_ERROR, $response_object->error);
 			} else {
 				if(isset($response_object->items))
@@ -747,11 +750,12 @@ class Echove
 	{
 		$response = $this->curlRequest($request, FALSE);
 
-		if($validate_json){
-
+		if($validate_json)
+		{
 			$response = json_decode($response);
 
-			if(!$json->result){
+			if(!$json->result)
+			{
 				throw new EchoveAPIError($this, self::ERROR_UNKNOWN_API_ERROR);
 			}
 		}
@@ -760,24 +764,21 @@ class Echove
 	}
 
 	/**
-	 * Makes a curl request
-	 * @param mixed [$request] $url to fectch or The data to send via post
-	 * params
-	 * @param boolean [$get_request] if false we send post params
-	 * @access private
+	 * Makes a cURL request
+	 * @access Private
+	 * @since 1.0.0
+	 * @param mixed [$request] URL to fetch or the data to send via POST
+	 * @param boolean [$get_request] If false, send POST params
 	 * @return void
 	 */
 	private function curlRequest($request, $get_request = FALSE)
 	{
-
 		$curl = curl_init();
 
 		if($get_request)
 		{
-			//Request is url here
 			curl_setopt($curl, CURLOPT_URL, $request);
 		} else {
-			//Request if a combination of post params
 			curl_setopt($curl, CURLOPT_URL, self::WRITE_URL);
 			curl_setopt($curl, CURLOPT_POST, 1);
 			curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
@@ -789,6 +790,7 @@ class Echove
 		$this->api_calls++;
 
 		$curl_error = NULL;
+		
 		if(curl_errno($curl))
 		{
 			$curl_error = curl_error($curl);
@@ -798,7 +800,8 @@ class Echove
 
 		if($curl_error !== NULL)
 		{
-			if($get_request){
+			if($get_request)
+			{
 				throw new EchoveAPIError($this, self::ERROR_READ_API_TRANSACTION_FAILED, $curl_error);
 			} else {
 				throw new EchoveAPIError($this, self::ERROR_WRITE_API_TRANSACTION_FAILED, $curl_error);
@@ -809,12 +812,14 @@ class Echove
 	}
 
 	/**
-	 * Cleans the response for 32 bit machine compliance.
-	 * @param string [$response] response from a curl request
-	 * @access private
-	 * @return string cleaned string if you're using a 32 bit machine.
+	 * Cleans the response for 32-bit machine compliance.
+	 * @access Private
+	 * @since 1.0.0
+	 * @param string [$response] The response from a cURL request
+	 * @return string The cleansed string if using a 32-bit machine.
 	 */
-	private function bit32Clean($response){
+	private function bit32Clean($response)
+	{
 		if($this->bit32)
 		{
 			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
@@ -848,14 +853,16 @@ class Echove
 				'seconds' => 0
 			);
 
-			if($total_seconds >= 3600) {
+			if($total_seconds >= 3600)
+			{
 				$value['hours'] = floor($total_seconds/3600);
 				$total_seconds = ($total_seconds%3600);
 
 				$time .= $value['hours'] . ':';
 			}
 
-			if($total_seconds >= 60) {
+			if($total_seconds >= 60)
+			{
 				$value['minutes'] = floor($total_seconds/60);
 				$total_seconds = ($total_seconds%60);
 
@@ -968,6 +975,7 @@ class Echove
 		$return = '';
 		$matches = array();
 
+		$preg = preg_match('/((.*?)\/)*/', $flvUrl, $matches);
 		$filename = preg_replace('/.*\//', '', $flvUrl);
 		$filename = preg_replace('/&.*/', '', $filename);
 
@@ -1073,27 +1081,31 @@ class Echove
 	 */
 	private function triggerError($err_code)
 	{
-		if($this->show_errors === TRUE){
+		if($this->show_errors === TRUE)
+		{
 			$text = $this->getErrorAsString($err_code, &$type);
+			
 			if($type === self::ERROR_TYPE_WARNING)
 			{
-				trigger_error($text , E_USER_WARNING);
-			} elseif($type === self::ERROR_TYPE_NOTICE){
-				trigger_error($text , E_USER_NOTICE);
+				trigger_error($text, E_USER_WARNING);
+			} elseif($type === self::ERROR_TYPE_NOTICE) {
+				trigger_error($text, E_USER_NOTICE);
 			}
 		}
 	}
 
 	/**
-	 * Converts and error code into a string representation
-	 * @param int [$err_code]
-	 * @param int [$type] represents either self::ERROR_TYPE_WARNING,
-	 * self::ERROR_TYPE_NOTICE
+	 * Converts an error code into a textual representation
 	 * @access public
-	 * @return string, int [$type] be reference
+	 * @since 1.0.0
+	 * @param int [$err_code] The code number of an error
+	 * @param int [$type] Either a notice or a warning
+	 * @return string The error text
 	 */
-	public function getErrorAsString($err_code, &$type = null){
+	public function getErrorAsString($err_code, &$type = null)
+	{
 		$text = '';
+		
 		switch($err_code)
 		{
 			case self::ERROR_READ_TOKEN_NOT_PROVIDED:
@@ -1136,31 +1148,24 @@ class Echove
 
 		return '[ECHOVE-' . $err_code . '] ' . $text;
 	}
-
 }
 
-class EchoveException extends Exception{
+class EchoveException extends Exception
+{
 	public function __construct(Echove $obj, $err_code, $raw_error_string = NULL)
 	{
 		$error = $obj->getErrorAsString($err_code);
-		if($raw_error_string !== NULL){
-			$error .= "\n".'RAW: '.$raw_error_string;
-		 }
+		
+		if($raw_error_string !== NULL)
+		{
+			$error .= "\n" . 'RAW: ' . $raw_error_string;
+		}
 		parent::__construct($error, $err_code);
 	}
 }
 
-class EchoveTokenError extends EchoveException{
-}
-
-class EchoveAPIError extends EchoveException{
-}
-
-class EchoveInvalidMethodCall extends EchoveException{
-}
-
-class EchoveTypeNotSpecified extends EchoveException{
-}
-
-class EchoveIdNotProvided extends EchoveException{
-}
+class EchoveTokenError extends EchoveException{}
+class EchoveAPIError extends EchoveException{}
+class EchoveInvalidMethodCall extends EchoveException{}
+class EchoveTypeNotSpecified extends EchoveException{}
+class EchoveIdNotProvided extends EchoveException{}
