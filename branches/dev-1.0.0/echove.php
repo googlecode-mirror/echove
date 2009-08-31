@@ -13,11 +13,11 @@
  *	 Brian Franklin, Professional Services Engineer, Brightcove
  *
  * CONTRIBUTORS:
- *	 Jesse Streb, Kristen McGregor, Luke Weber
+ *	 Luke Weber, Kristen McGregor, Jesse Streb
  *
  * CHANGE LOG:
  *	 1.0.0 - Added putData method. Added error exceptions. Unified request logic. Other
- *			 efficiency improvements.
+ *			 efficiency improvements. Brightcove API update adjustments.
  *	 0.4.0 - Provided better logic for createVideo method. Fixed error reporting in
  *			 createPlaylist, also included check to determine if video IDs are being
  *			 passed.
@@ -70,36 +70,48 @@ class Echove
 	const ERROR_WRITE_API_TRANSACTION_FAILED = 5;
 	const ERROR_ID_NOT_PROVIDED = 8;
 	const ERROR_TYPE_NOT_SPECIFIED = 9;
-	const ERROR_FLV_MULTIPLE_RENDITION = 10;
+	const ERROR_INVALID_UPLOAD_OPTION = 10;
 	const ERROR_UNKNOWN_API_ERROR = 11;
 	const ERROR_TYPE_WARNING = 0;
 	const ERROR_TYPE_NOTICE = 1;
 
-	const READ_URL = 'http://api.brightcove.com/services/library?';
-	const WRITE_URL = 'http://api.brightcove.com/services/post';
-	const DOWNLOAD_URL = 'http://brightcove.vo.llnwd.net/';
-
-	private $token_read;
-	private $token_write;
-	private $show_errors;
-	private $page_number = NULL;
-	private $page_size = NULL;
-	private $total_count = NULL;
-	private $api_calls = 0;
+	public $token_read;
+	public $token_write;
+	public $read_url;
+	public $write_url;
+	public $download_url;
+	public $show_notices;
+	public $secure;
+	public $page_number = NULL;
+	public $page_size = NULL;
+	public $total_count = NULL;
+	public $api_calls = 0;
 
 	/**
 	 * @access Public
 	 * @since 0.1.0
 	 * @param string [$token_read] The read API token for the Brightcove account
 	 * @param string [$token_write] The write API token for the Brightcove account
-	 * @param bool [$show_errors] Whether or not to show Echove errors
+	 * @param bool [$show_notices] Whether or not to show error notices
+	 * @param bool [$secure] Whether or not to use HTTPS for API requests
 	 */
-	public function __construct($token_read, $token_write = NULL, $show_errors = FALSE)
+	public function __construct($token_read, $token_write = NULL, $show_notices = FALSE, $secure = FALSE)
 	{
 		$this->token_read = $token_read;
 		$this->token_write = $token_write;
-		$this->show_error = $show_errors;
-		$this->bit32 = ((string)'99999999999999' == (int)'99999999999999') ? TRUE : FALSE;
+		$this->download_url = 'http://brightcove.vo.llnwd.net/';
+		$this->show_notices = $show_notices;
+		$this->secure = $secure;
+		$this->bit32 = ((string)'99999999999999' == (int)'99999999999999') ? FALSE : TRUE;
+		
+		if($this->secure)
+		{
+			$this->read_url = 'https://api.brightcove.com/services/library?';
+			$this->write_url = 'https://api.brightcove.com/services/post';
+		} else {
+			$this->read_url = 'http://api.brightcove.com/services/library?';
+			$this->write_url = 'http://api.brightcove.com/services/post';
+		}
 
 		if(!$token_read)
 		{
@@ -118,7 +130,7 @@ class Echove
 	public function find($call, $params = NULL)
 	{
 		$call = strtolower(preg_replace('/(?:find|_)+/i', '', $call));
-
+		
 		switch($call)
 		{
 			case 'allvideos':
@@ -206,6 +218,7 @@ class Echove
 				break;
 			default:
 				throw new EchoveInvalidMethodCall($this, self::ERROR_REQUESTED_METHOD_NOT_FOUND);
+				break;
 		}
 
 		if(isset($params['from_date']) || $default == 'from_date')
@@ -301,16 +314,11 @@ class Echove
 	 * @since 0.3.0
 	 * @param string [$file] The location of the temporary file
 	 * @param array [$meta] The video information
-	 * @param bool [$multiple] Whether or not to create multiple renditions
+	 * @param array [$options] Optional upload values
 	 * @return mixed The video ID if successful, otherwise FALSE
 	 */
-	public function createVideo($file = NULL, $meta, $multiple = FALSE)
+	public function createVideo($file = NULL, $meta, $options = NULL)
 	{
-		if(!$this->token_write)
-		{
-			throw new EchoveTokenError($this, self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
-		}
-
 		$request = array();
 		$post = array();
 		$params = array();
@@ -321,6 +329,16 @@ class Echove
 			$video[$key] = $value;
 		}
 
+		if(!$video['name'])
+		{
+			$video['name'] = time();
+		}
+
+		if(!$video['shortDescription'])
+		{
+			$video['shortDescription'] = time();
+		}
+
 		if(!$video['referenceId'])
 		{
 			$video['referenceId'] = time();
@@ -329,24 +347,43 @@ class Echove
 		$params['token'] = $this->token_write;
 		$params['video'] = $video;
 
-		if(!isset($meta['create_multiple_renditions']))
+		if($file)
 		{
-			if($multiple)
+			preg_match('/(\.f4a|\.f4b|\.f4v|\.f4p|\.flv)*$/i', $file, $invalid_extensions);
+
+			if($invalid_extensions[1])
 			{
-				$params['create_multiple_renditions'] = 'TRUE';
-			} else {
-				$params['create_multiple_renditions'] = 'FALSE';
+				if(isset($options['encode_to']))
+				{
+					unset($options['encode_to']);
+					$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
+				}
+				
+				if(isset($options['create_multiple_renditions']))
+				{
+					$options['create_multiple_renditions'] = 'FALSE';
+					$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
+				}
+				
+				if(isset($options['preserve_source_rendition']))
+				{
+					unset($options['preserve_source_rendition']);
+					$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
+				}
+			}
+			
+			if($options['create_multiple_renditions'] === TRUE && $options['H264NoProcessing'] === TRUE)
+			{
+				unset($options['H264NoProcessing']);
+				$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
 			}
 		}
-
-		if($file && isset($params['create_multiple_renditions']))
+		
+		if($options)
 		{
-			$invalid_extensions = preg_match('/.*?[f4a|f4b|f4v|f4p|flv]$/i', $file);
-
-			if($invalid_extensions)
+			foreach($options as $key => $value)
 			{
-				$params['create_multiple_renditions'] = 'FALSE';
-				$this->triggerError(self::ERROR_FLV_MULTIPLE_RENDITION);
+				$params[$key] = $value;
 			}
 		}
 
@@ -360,50 +397,6 @@ class Echove
 			$request['file'] = '@' . $file;
 		}
 
-		return $this->putData()->result;
-	}
-
-	/**
-	 * Retrieves the status of a video upload
-	 * @access Public
-	 * @since 0.3.9
-	 * @param int [$video_id] The ID of the video asset
-	 * @param string [$ref_id] The reference ID of the video asset
-	 * @return string The upload status
-	 */
-	public function getStatus($video_id = NULL, $ref_id = TRUE)
-	{
-		if(!$this->token_write)
-		{
-			throw new EchoveTokenError($this, self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
-		}
-
-		if(!$video_id && !$ref_id)
-		{
-			$this->triggerError(self::ERROR_ID_NOT_PROVIDED);
-		}
-
-		$request = array();
-		$post = array();
-		$params = array();
-
-		$params['token'] = $this->token_write;
-
-		if($video_id)
-		{
-			$params['video_id'] = $video_id;
-		}
-
-		if($ref_id)
-		{
-			$params['reference_id'] = $ref_id;
-		}
-
-		$post['method'] = 'get_upload_status';
-		$post['params'] = $params;
-
-		$request['json'] = json_encode($post) . "\n";
-
 		return $this->putData($request)->result;
 	}
 
@@ -414,16 +407,12 @@ class Echove
 	 * @param string [$file] The location of the temporary file
 	 * @param array [$meta] The image information
 	 * @param int [$video_id] The ID of the video asset to assign the image to
+	 * @param string [$ref_id] The reference ID of the video asset to assign the image to
 	 * @param bool [$resize] Whether or not to resize the image on upload
-	 * @return mixed The image asset ID if successful, otherwise FALSE
+	 * @return mixed The image DTO
 	 */
-	public function createImage($file = NULL, $meta, $video_id = NULL, $resize = TRUE)
+	public function createImage($file = NULL, $meta, $video_id = NULL, $ref_id = NULL, $resize = TRUE)
 	{
-		if(!$this->token_write)
-		{
-			throw new EchoveTokenError($this, self::ERROR_WRITE_TOKKEN_NOT_PROVIDED);
-		}
-
 		$request = array();
 		$post = array();
 		$image = array();
@@ -434,17 +423,19 @@ class Echove
 			$image[$key] = $value;
 		}
 
-		if(!$image['referenceId'])
-		{
-			$image['referenceId'] = time();
-		}
-
 		$params['token'] = $this->token_write;
 		$params['image'] = $image;
+
+		if(!$meta['referenceId'])
+		{
+			$meta['referenceId'] = time();
+		}
 
 		if($video_id)
 		{
 			$params['video_id'] = $video_id;
+		} elseif($ref_id) {
+			$params['video_reference_id'] = $ref_id;
 		} else {
 			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
 		}
@@ -466,7 +457,7 @@ class Echove
 			$request['file'] = '@' . $file;
 		}
 
-		return $this->putData($request)->result->id;
+		return $this->putData($request)->result;
 	}
 
 	/**
@@ -478,11 +469,6 @@ class Echove
 	 */
 	public function createPlaylist($meta)
 	{
-		if(!$this->token_write)
-		{
-			throw new EchoveTokenError($this, self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
-		}
-
 		$request = array();
 		$post = array();
 		$params = array();
@@ -521,19 +507,54 @@ class Echove
 	}
 
 	/**
+	 * Retrieves the status of a video upload
+	 * @access Public
+	 * @since 0.3.9
+	 * @param int [$video_id] The ID of the video asset
+	 * @param string [$ref_id] The reference ID of the video asset
+	 * @return string The upload status
+	 */
+	public function getStatus($video_id = NULL, $ref_id = TRUE)
+	{
+		if(!$video_id && !$ref_id)
+		{
+			$this->triggerError(self::ERROR_ID_NOT_PROVIDED);
+		}
+
+		$request = array();
+		$post = array();
+		$params = array();
+
+		$params['token'] = $this->token_write;
+
+		if($video_id)
+		{
+			$params['video_id'] = $video_id;
+		}
+
+		if($ref_id)
+		{
+			$params['reference_id'] = $ref_id;
+		}
+
+		$post['method'] = 'get_upload_status';
+		$post['params'] = $params;
+
+		$request['json'] = json_encode($post) . "\n";
+
+		return $this->putData($request)->result;
+	}
+
+	/**
 	 * Updates a video or playlist
 	 * @access Public
 	 * @since 0.3.0
 	 * @param string [$type] The item to update, either a video or playlist
 	 * @param array [$meta] The information for the video or playlist
+	 * @return object The new video DTO
 	 */
 	public function update($type, $meta)
 	{
-		if(!$this->token_write)
-		{
-			throw new EchoveTokenError($this, self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
-		}
-
 		$request = array();
 		$post = array();
 		$params = array();
@@ -566,7 +587,7 @@ class Echove
 
 		$request['json'] = json_encode($post) . "\n";
 
-		return $this->putData($request, FALSE);
+		return $this->putData($request)->result;
 	}
 
 	/**
@@ -576,21 +597,23 @@ class Echove
 	 * @param string [$type] The item to delete, either a video or playlist
 	 * @param int [$id] The ID of the video or playlist
 	 * @param string [$ref_id] The reference ID of the video or playlist
-	 * @param bool [$cascade] Whether or not to cascade the deletion
+	 * @param array [$options] Optional upload values
 	 */
-	public function delete($type, $id = NULL, $ref_id = NULL, $cascade = TRUE)
+	public function delete($type, $id = NULL, $ref_id = NULL, $options = NULL)
 	{
-		if(!$this->token_write)
-		{
-			throw new EchoveTokenError($this, self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
-		}
-
 		$request = array();
 		$post = array();
 		$params = array();
 
 		$params['token'] = $this->token_write;
-		$params['cascade'] = $cascade;
+		
+		if($options)
+		{
+			foreach($options as $key => $value)
+			{
+				$params[$key] = $value;
+			}
+		}
 
 		$type = strtolower($type);
 		
@@ -639,11 +662,6 @@ class Echove
 	 */
 	public function shareVideo($video_id, $account_ids, $accept = FALSE)
 	{
-		if(!$this->token_write)
-		{
-			throw new EchoveTokenError($this, self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
-		}
-
 		if(!$video_id)
 		{
 			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
@@ -718,7 +736,7 @@ class Echove
 
 			if($response_object->error)
 			{
-				throw new EchoveAPIError($this, self::ERROR_UNKNOWN_API_ERROR, $response_object->error);
+				throw new EchoveApiError($this, self::ERROR_UNKNOWN_API_ERROR, $response_object->error);
 			} else {
 				if(isset($response_object->items))
 				{
@@ -734,7 +752,7 @@ class Echove
 				return $data;
 			}
 		} else {
-			throw new EchoveAPIError($this, self::ERROR_READ_API_TRANSACTION_FAILED);
+			throw new EchoveApiError($this, self::ERROR_READ_API_TRANSACTION_FAILED);
 		}
 	}
 
@@ -748,19 +766,24 @@ class Echove
 	 */
 	private function putData($request, $return_json = TRUE)
 	{
+		if(!$this->token_write)
+		{
+			throw new EchoveTokenError($this, self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
+		}
+
 		$response = $this->curlRequest($request, FALSE);
 
-		if($validate_json)
+		if($return_json)
 		{
-			$response = json_decode($response);
+			$response_object = json_decode($response);
 
-			if(!$json->result)
+			if(!$response_object->result)
 			{
-				throw new EchoveAPIError($this, self::ERROR_UNKNOWN_API_ERROR);
+				throw new EchoveApiError($this, self::ERROR_UNKNOWN_API_ERROR);
 			}
 		}
 
-		return $response;
+		return $response_object;
 	}
 
 	/**
@@ -779,7 +802,7 @@ class Echove
 		{
 			curl_setopt($curl, CURLOPT_URL, $request);
 		} else {
-			curl_setopt($curl, CURLOPT_URL, self::WRITE_URL);
+			curl_setopt($curl, CURLOPT_URL, $this->write_url);
 			curl_setopt($curl, CURLOPT_POST, 1);
 			curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
 		}
@@ -802,9 +825,9 @@ class Echove
 		{
 			if($get_request)
 			{
-				throw new EchoveAPIError($this, self::ERROR_READ_API_TRANSACTION_FAILED, $curl_error);
+				throw new EchoveApiError($this, self::ERROR_READ_API_TRANSACTION_FAILED, $curl_error);
 			} else {
-				throw new EchoveAPIError($this, self::ERROR_WRITE_API_TRANSACTION_FAILED, $curl_error);
+				throw new EchoveApiError($this, self::ERROR_WRITE_API_TRANSACTION_FAILED, $curl_error);
 			}
 		}
 
@@ -936,10 +959,15 @@ class Echove
 	public function filter($videos, $tags)
 	{
 		$filtered = array();
-
+		
 		foreach($videos as $video)
 		{
-			if(count(array_intersect(explode(',', $tags), $video->tags)) > 0)
+			foreach($video->tags as $k => $v)
+			{
+				$video->tags[$k] = strtolower($v);
+			}
+			
+			if(count(array_intersect(explode(',', strtolower($tags)), $video->tags)) > 0)
 			{
 				$filtered[] = $video;
 			}
@@ -988,13 +1016,13 @@ class Echove
 
 		if(strpos($flvUrl, '/d5/') !== FALSE)
 		{
-			$return = (self::DOWNLOAD_URL . 'pd5/media/' . $matches[2] . '/' . $filename);
+			$return = ($this->download_url . 'pd5/media/' . $matches[2] . '/' . $filename);
 		} elseif(strpos($flvUrl, '/o2/') !== FALSE) {
-			$return = (self::DOWNLOAD_URL . 'pd2/media/' . $matches[2] . '/' . $filename);
+			$return = ($this->download_url . 'pd2/media/' . $matches[2] . '/' . $filename);
 		} elseif(strpos($flvUrl, '/d6/') !== FALSE) {
-			$return = (self::DOWNLOAD_URL . 'pd6/media/' . $matches[2] . '/' . $filename);
+			$return = ($this->download_url . 'pd6/media/' . $matches[2] . '/' . $filename);
 		} elseif(strpos($flvUrl, '/d7/') !== FALSE) {
-			$return = (self::DOWNLOAD_URL. 'pd7/media/' . $matches[2] . '/' . $filename);
+			$return = ($this->download_url. 'pd7/media/' . $matches[2] . '/' . $filename);
 		}
 
 		return $return;
@@ -1081,16 +1109,11 @@ class Echove
 	 */
 	private function triggerError($err_code)
 	{
-		if($this->show_errors === TRUE)
+		$text = $this->getErrorAsString($err_code);
+		
+		if($this->show_notices)
 		{
-			$text = $this->getErrorAsString($err_code, &$type);
-			
-			if($type === self::ERROR_TYPE_WARNING)
-			{
-				trigger_error($text, E_USER_WARNING);
-			} elseif($type === self::ERROR_TYPE_NOTICE) {
-				trigger_error($text, E_USER_NOTICE);
-			}
+			trigger_error($text, E_USER_NOTICE);
 		}
 	}
 
@@ -1099,54 +1122,40 @@ class Echove
 	 * @access public
 	 * @since 1.0.0
 	 * @param int [$err_code] The code number of an error
-	 * @param int [$type] Either a notice or a warning
 	 * @return string The error text
 	 */
-	public function getErrorAsString($err_code, &$type = null)
+	public function getErrorAsString($err_code)
 	{
-		$text = '';
-		
 		switch($err_code)
 		{
 			case self::ERROR_READ_TOKEN_NOT_PROVIDED:
-				$text = 'Read token not provided';
-				$type = self::ERROR_TYPE_WARNING;
+				return 'Read token not provided';
 				break;
 			case self::ERROR_WRITE_TOKEN_NOT_PROVIDED:
-				$text = 'Write token not provided';
-				$type = self::ERROR_TYPE_WARNING;
+				return 'Write token not provided';
 				break;
 			case self::ERROR_REQUESTED_METHOD_NOT_FOUND:
-				$text = 'Requested method not found';
-				$type = self::ERROR_TYPE_WARNING;
+				return 'Requested method not found';
 				break;
 			case self::ERROR_READ_API_TRANSACTION_FAILED:
-				$text = 'Read API transaction failed';
-				$type = self::ERROR_TYPE_NOTICE;
+				return 'Read API transaction failed';
 				break;
 			case self::ERROR_WRITE_API_TRANSACTION_FAILED:
-				$text = 'Write API transaction failed';
-				$type = self::ERROR_TYPE_WARNING;
+				return 'Write API transaction failed';
 				break;
 			case self::ERROR_ID_NOT_PROVIDED:
-				$text = 'ID not provided';
-				$type = self::ERROR_TYPE_WARNING;
+				return 'ID not provided';
 				break;
 			case self::ERROR_TYPE_NOT_SPECIFIED:
-				$text = 'Type not specified';
-				$type = self::ERROR_TYPE_WARNING;
+				return 'Type not specified';
 				break;
-			case self::ERROR_FLV_MULTIPLE_RENDITION:
-				$text = 'FLV files cannot have multiple renditions';
-				$type = self::ERROR_TYPE_NOTICE;
+			case self::ERROR_INVALID_UPLOAD_OPTION:
+				return 'An invalid media upload parameter has been set';
 				break;
 			case self::ERROR_UNKNOWN_API_ERROR:
-				$text = 'Unknown API error';
-				$type = self::ERROR_TYPE_WARNING;
+				return 'Unknown API error';
 				break;
 		}
-
-		return '[ECHOVE-' . $err_code . '] ' . $text;
 	}
 }
 
@@ -1158,14 +1167,15 @@ class EchoveException extends Exception
 		
 		if($raw_error_string !== NULL)
 		{
-			$error .= "\n" . 'RAW: ' . $raw_error_string;
+			$error .= "\n" . 'Details: ' . "\n" . $raw_error_string;
 		}
+		
 		parent::__construct($error, $err_code);
 	}
 }
 
 class EchoveTokenError extends EchoveException{}
-class EchoveAPIError extends EchoveException{}
+class EchoveApiError extends EchoveException{}
 class EchoveInvalidMethodCall extends EchoveException{}
 class EchoveTypeNotSpecified extends EchoveException{}
 class EchoveIdNotProvided extends EchoveException{}
