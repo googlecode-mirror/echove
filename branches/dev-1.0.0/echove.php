@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0c (27 AUGUST 2009)
+ * ECHOVE 1.0.0d (9 SEPTEMBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -75,13 +75,14 @@ class Echove
 	const ERROR_TYPE_WARNING = 0;
 	const ERROR_TYPE_NOTICE = 1;
 
-	public $token_read;
-	public $token_write;
-	public $read_url;
-	public $write_url;
-	public $download_url;
-	public $show_notices;
-	public $secure;
+	public $token_read = NULL;
+	public $token_write = NULL;
+	public $read_url = NULL;
+	public $write_url = NULL;
+	public $download_url = 'http://brightcove.vo.llnwd.net/';
+	public $show_notices = FALSE;
+	public $secure = FALSE;
+	public $bit32 = FALSE;
 	public $page_number = NULL;
 	public $page_size = NULL;
 	public $total_count = NULL;
@@ -99,7 +100,6 @@ class Echove
 	{
 		$this->token_read = $token_read;
 		$this->token_write = $token_write;
-		$this->download_url = 'http://brightcove.vo.llnwd.net/';
 		$this->show_notices = $show_notices;
 		$this->secure = $secure;
 		$this->bit32 = ((string)'99999999999999' == (int)'99999999999999') ? FALSE : TRUE;
@@ -120,7 +120,7 @@ class Echove
 	}
 
 	/**
-	 * Formats the API request URL, retrieves the data, and returns it.
+	 * Formats the request for any API 'Find' methods and retrieves the data.
 	 * @access Public
 	 * @since 0.1.0
 	 * @param string [$call] The requested API method
@@ -267,7 +267,7 @@ class Echove
 	}
 
 	/**
-	 * Finds all videos in account, ignoring pagination
+	 * Finds all videos in account, ignoring pagination.
 	 * @access Public
 	 * @since 0.3.6
 	 * @param array [$params] A key-value array of API parameters and values
@@ -309,7 +309,7 @@ class Echove
 	}
 
 	/**
-	 * Uploads a video file to Brightcove
+	 * Uploads a video file to Brightcove.
 	 * @access Public
 	 * @since 0.3.0
 	 * @param string [$file] The location of the temporary file
@@ -401,7 +401,7 @@ class Echove
 	}
 
 	/**
-	 * Uploads an image file to Brightcove
+	 * Uploads an image file to Brightcove.
 	 * @access Public
 	 * @since 0.3.4
 	 * @param string [$file] The location of the temporary file
@@ -409,7 +409,7 @@ class Echove
 	 * @param int [$video_id] The ID of the video asset to assign the image to
 	 * @param string [$ref_id] The reference ID of the video asset to assign the image to
 	 * @param bool [$resize] Whether or not to resize the image on upload
-	 * @return mixed The image DTO
+	 * @return mixed The image asset ID if successful, otherwise false
 	 */
 	public function createImage($file = NULL, $meta, $video_id = NULL, $ref_id = NULL, $resize = TRUE)
 	{
@@ -461,7 +461,7 @@ class Echove
 	}
 
 	/**
-	 * Creates a playlist
+	 * Creates a playlist.
 	 * @access Public
 	 * @since 0.3.0
 	 * @param array [$meta] The playlist information
@@ -507,7 +507,7 @@ class Echove
 	}
 
 	/**
-	 * Retrieves the status of a video upload
+	 * Retrieves the status of a video upload.
 	 * @access Public
 	 * @since 0.3.9
 	 * @param int [$video_id] The ID of the video asset
@@ -546,7 +546,7 @@ class Echove
 	}
 
 	/**
-	 * Updates a video or playlist
+	 * Updates a video or playlist.
 	 * @access Public
 	 * @since 0.3.0
 	 * @param string [$type] The item to update, either a video or playlist
@@ -591,7 +591,7 @@ class Echove
 	}
 
 	/**
-	 * Deletes a video or playlist
+	 * Deletes a video or playlist.
 	 * @access Public
 	 * @since 0.3.0
 	 * @param string [$type] The item to delete, either a video or playlist
@@ -652,7 +652,7 @@ class Echove
 	}
 
 	/**
-	 * Shares a video with the selected accounts
+	 * Shares a video with the selected accounts.
 	 * @access Public
 	 * @since 0.3.9
 	 * @param int [$video_id] The ID of the video asset
@@ -691,7 +691,7 @@ class Echove
 	}
 
 	/**
-	 * Appends API parameters onto API request URL
+	 * Appends API parameters onto API request URL.
 	 * @access Private
 	 * @since 0.1.0
 	 * @param string [$method] The requested API method
@@ -720,7 +720,7 @@ class Echove
 	}
 
 	/**
-	 * Retrieves API data from provided URL
+	 * Retrieves API data from provided URL.
 	 * @access Private
 	 * @since 0.1.0
 	 * @param string [$url] The complete API request URL
@@ -758,7 +758,7 @@ class Echove
 
 
 	/**
-	 * Sends data to the API
+	 * Sends data to the API.
 	 * @access Private
 	 * @since 1.0.0
 	 * @param array [$request] The data to send
@@ -787,7 +787,7 @@ class Echove
 	}
 
 	/**
-	 * Makes a cURL request
+	 * Makes a cURL request.
 	 * @access Private
 	 * @since 1.0.0
 	 * @param mixed [$request] URL to fetch or the data to send via POST
@@ -854,7 +854,7 @@ class Echove
 	}
 
 	/**
-	 * Converts milliseconds to formatted time or seconds
+	 * Converts milliseconds to formatted time or seconds.
 	 * @access Public
 	 * @since 0.2.1
 	 * @param int [$ms] The length of the video in milliseconds
@@ -908,7 +908,7 @@ class Echove
 	}
 
 	/**
-	 * Parses video tags array into a key-value array
+	 * Parses video tags array into a key-value array.
 	 * @access Public
 	 * @since 0.3.2
 	 * @param array [$tags] The tags array from a video DTO
@@ -949,7 +949,7 @@ class Echove
 	}
 
 	/**
-	 * Removes videos that don't contain the appropriate tags
+	 * Removes videos that don't contain the appropriate tags.
 	 * @access Public
 	 * @since 0.3.6
 	 * @param array [$videos] All the videos you wish to filter
@@ -977,7 +977,7 @@ class Echove
 	}
 
 	/**
-	 * Formats a video name to be search-engine friendly
+	 * Formats a video name to be search-engine friendly.
 	 * @access Public
 	 * @since 0.2.1
 	 * @param string [$name] The video name
@@ -1029,7 +1029,7 @@ class Echove
 	}
 
 	/**
-	 * Returns the JavaScript version of the player embed code
+	 * Returns the JavaScript version of the player embed code.
 	 * @access Public
 	 * @since 0.2.2
 	 * @param int [$playerId] The ID of the player to embed
@@ -1102,7 +1102,7 @@ class Echove
 	}
 
 	/**
-	 * Triggers an error if errors are enabled
+	 * Triggers an error if errors are enabled.
 	 * @access Private
 	 * @since 0.3.1
 	 * @param string [$err_code] The code number of an error
@@ -1118,7 +1118,7 @@ class Echove
 	}
 
 	/**
-	 * Converts an error code into a textual representation
+	 * Converts an error code into a textual representation.
 	 * @access public
 	 * @since 1.0.0
 	 * @param int [$err_code] The code number of an error
