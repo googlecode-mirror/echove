@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0d (9 SEPTEMBER 2009)
+ * ECHOVE 1.0.0e (14 SEPTEMBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -75,18 +75,18 @@ class Echove
 	const ERROR_TYPE_WARNING = 0;
 	const ERROR_TYPE_NOTICE = 1;
 
-	public $token_read = NULL;
-	public $token_write = NULL;
-	public $read_url = NULL;
-	public $write_url = NULL;
-	public $download_url = 'http://brightcove.vo.llnwd.net/';
-	public $show_notices = FALSE;
-	public $secure = FALSE;
-	public $bit32 = FALSE;
+	public $api_calls = 0;
 	public $page_number = NULL;
 	public $page_size = NULL;
+	public $token_read = NULL;
+	public $token_write = NULL;
 	public $total_count = NULL;
-	public $api_calls = 0;
+	private $bit32 = FALSE;
+	private $download_url = 'http://brightcove.vo.llnwd.net/';
+	private $read_url = NULL;
+	private $secure = FALSE;
+	private $show_notices = FALSE;
+	private $write_url = NULL;
 
 	/**
 	 * @access Public
@@ -96,7 +96,7 @@ class Echove
 	 * @param bool [$show_notices] Whether or not to show error notices
 	 * @param bool [$secure] Whether or not to use HTTPS for API requests
 	 */
-	public function __construct($token_read, $token_write = NULL, $show_notices = FALSE, $secure = FALSE)
+	public function __construct($token_read = NULL, $token_write = NULL, $show_notices = FALSE, $secure = FALSE)
 	{
 		$this->token_read = $token_read;
 		$this->token_write = $token_write;
@@ -112,11 +112,31 @@ class Echove
 			$this->read_url = 'http://api.brightcove.com/services/library?';
 			$this->write_url = 'http://api.brightcove.com/services/post';
 		}
-
-		if(!$token_read)
-		{
-			throw new EchoveTokenError($this, self::ERROR_READ_TOKEN_NOT_PROVIDED);
-		}
+	}
+	
+	/**
+	 * Sets a property of the Echove class
+	 * @access Public
+	 * @since 1.0.0
+	 * @param string [$key] The property to set
+	 * @param mixed [$value] The new value for the property
+	 * @return mixed The new value of the property
+	 */
+	public function setProperty($key, $value)
+	{
+		$this->$key = $value;
+	}
+	
+	/**
+	 * Retrieves a property of the Echove class
+	 * @access Public
+	 * @since 1.0.0
+	 * @param string [$key] The property to retrieve
+	 * @return mixed The value of the property
+	 */
+	public function getProperty($key)
+	{
+		return $this->$key;
 	}
 
 	/**
@@ -728,6 +748,11 @@ class Echove
 	 */
 	private function getData($url)
 	{
+		if(!$token_read)
+		{
+			throw new EchoveTokenError($this, self::ERROR_READ_TOKEN_NOT_PROVIDED);
+		}
+		
 		$response = $this->curlRequest($url, TRUE);
 
 		if($response && $response != 'NULL')
