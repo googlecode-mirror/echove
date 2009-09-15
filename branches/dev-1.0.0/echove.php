@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0e (14 SEPTEMBER 2009)
+ * ECHOVE 1.0.0f (15 SEPTEMBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -13,7 +13,7 @@
  *	 Brian Franklin, Professional Services Engineer, Brightcove
  *
  * CONTRIBUTORS:
- *	 Luke Weber, Kristen McGregor, Jesse Streb
+ *	 Luke Weber, Kristen McGregor, Brandon Aaskov, Jesse Streb
  *
  * CHANGE LOG:
  *	 1.0.0 - Added putData method. Added error exceptions. Unified request logic. Other
@@ -115,7 +115,7 @@ class Echove
 	}
 	
 	/**
-	 * Sets a property of the Echove class
+	 * Sets a property of the Echove class.
 	 * @access Public
 	 * @since 1.0.0
 	 * @param string [$key] The property to set
@@ -128,7 +128,7 @@ class Echove
 	}
 	
 	/**
-	 * Retrieves a property of the Echove class
+	 * Retrieves a property of the Echove class.
 	 * @access Public
 	 * @since 1.0.0
 	 * @param string [$key] The property to retrieve
@@ -748,7 +748,7 @@ class Echove
 	 */
 	private function getData($url)
 	{
-		if(!$token_read)
+		if(!$this->token_read)
 		{
 			throw new EchoveTokenError($this, self::ERROR_READ_TOKEN_NOT_PROVIDED);
 		}
@@ -759,7 +759,7 @@ class Echove
 		{
 			$response_object = json_decode($response);
 
-			if($response_object->error)
+			if(isset($response_object->error))
 			{
 				throw new EchoveApiError($this, self::ERROR_UNKNOWN_API_ERROR, $response_object->error);
 			} else {
