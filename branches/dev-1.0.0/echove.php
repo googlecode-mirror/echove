@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0f (15 SEPTEMBER 2009)
+ * ECHOVE 1.0.0g (16 SEPTEMBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -71,7 +71,7 @@ class Echove
 	const ERROR_ID_NOT_PROVIDED = 8;
 	const ERROR_TYPE_NOT_SPECIFIED = 9;
 	const ERROR_INVALID_UPLOAD_OPTION = 10;
-	const ERROR_UNKNOWN_API_ERROR = 11;
+	const ERROR_API_ERROR = 11;
 	const ERROR_TYPE_WARNING = 0;
 	const ERROR_TYPE_NOTICE = 1;
 
@@ -122,7 +122,7 @@ class Echove
 	 * @param mixed [$value] The new value for the property
 	 * @return mixed The new value of the property
 	 */
-	public function setProperty($key, $value)
+	public function __set($key, $value)
 	{
 		$this->$key = $value;
 	}
@@ -134,7 +134,7 @@ class Echove
 	 * @param string [$key] The property to retrieve
 	 * @return mixed The value of the property
 	 */
-	public function getProperty($key)
+	public function __get($key)
 	{
 		return $this->$key;
 	}
@@ -317,9 +317,12 @@ class Echove
 				$total_page = ceil($total_count / 100);
 			}
 
-			foreach($result as $video)
+			if(is_array($result))
 			{
-				$videos[] = $video;
+				foreach($result as $video)
+				{
+					$videos[] = $video;
+				}
 			}
 
 			$current_page++;
@@ -761,7 +764,12 @@ class Echove
 
 			if(isset($response_object->error))
 			{
-				throw new EchoveApiError($this, self::ERROR_UNKNOWN_API_ERROR, $response_object->error);
+				if($response_object->error->code == 103)
+				{
+					$this->getData($url);
+				} else {
+					throw new EchoveApiError($this, self::ERROR_API_ERROR, $response_object->error);
+				}
 			} else {
 				if(isset($response_object->items))
 				{
@@ -804,7 +812,7 @@ class Echove
 
 			if(!$response_object->result)
 			{
-				throw new EchoveApiError($this, self::ERROR_UNKNOWN_API_ERROR);
+				throw new EchoveApiError($this, self::ERROR_API_ERROR);
 			}
 		}
 
@@ -1177,8 +1185,8 @@ class Echove
 			case self::ERROR_INVALID_UPLOAD_OPTION:
 				return 'An invalid media upload parameter has been set';
 				break;
-			case self::ERROR_UNKNOWN_API_ERROR:
-				return 'Unknown API error';
+			case self::ERROR_API_ERROR:
+				return 'API error';
 				break;
 		}
 	}
@@ -1192,7 +1200,8 @@ class EchoveException extends Exception
 		
 		if($raw_error_string !== NULL)
 		{
-			$error .= "\n" . 'Details: ' . "\n" . $raw_error_string;
+			$error .= "\n" . 'Details: ' . "\n";
+			$error .= $raw_error_string->message ? $raw_error_string->message : $raw_error_string;
 		}
 		
 		parent::__construct($error, $err_code);
