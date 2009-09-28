@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0h (18 SEPTEMBER 2009)
+ * ECHOVE 1.0.0i (27 SEPTEMBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -88,7 +88,7 @@ class Echove
 	public $total_count = NULL;
 	
 	private $api_calls = 0;
-	private $bit32 = ((string)'99999999999999' == (int)'99999999999999') ? FALSE : TRUE;
+	private $bit32 = FALSE;
 	private $secure = FALSE;
 	private $show_notices = FALSE;
 	private $timeout_retry = FALSE;
@@ -112,6 +112,7 @@ class Echove
 	{
 		$this->token_read = $token_read;
 		$this->token_write = $token_write;
+		$this->bit32 = ((string)'99999999999999' == (int)'99999999999999') ? FALSE : TRUE;
 	}
 	
 	/**
@@ -1232,17 +1233,17 @@ class Echove
 			case self::ERROR_ID_NOT_PROVIDED:
 				return 'ID not provided';
 				break;
-			case self::ERROR_INVALID_METHOD:
-				return 'Requested method not found';
-				break;
 			case self::ERROR_INVALID_FILE_TYPE:
 				return 'Unsupported file type';
 				break;
-			case self::ERROR_INVALID_TYPE:
-				return 'Type not specified';
+			case self::ERROR_INVALID_METHOD:
+				return 'Requested method not found';
 				break;
 			case self::ERROR_INVALID_PROPERTY:
 				return 'Requested property not found';
+				break;
+			case self::ERROR_INVALID_TYPE:
+				return 'Type not specified';
 				break;
 			case self::ERROR_INVALID_UPLOAD_OPTION:
 				return 'An invalid media upload parameter has been set';
@@ -1280,7 +1281,7 @@ class EchoveException extends Exception
 		
 		if($raw_error_string !== NULL)
 		{
-			$error .= "\nDetails: \n";
+			$error .= "'.\nDetails: \n";
 			$error .= $raw_error_string->message ? $raw_error_string->message : $raw_error_string;
 		}
 		
