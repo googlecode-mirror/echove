@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0i (27 SEPTEMBER 2009)
+ * ECHOVE 1.0.0j (6 OCTOBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -125,7 +125,7 @@ class Echove
 	 */
 	public function __set($key, $value)
 	{
-		if(isset($this->$key))
+		if(isset($this->$key) || is_null($this->$key))
 		{
 			$this->$key = $value;
 		} else {
@@ -142,7 +142,7 @@ class Echove
 	 */
 	public function __get($key)
 	{
-		if(isset($this->$key))
+		if(isset($this->$key) || is_null($this->$key))
 		{
 			return $this->$key;
 		} else {
@@ -340,7 +340,7 @@ class Echove
 	
 	/**
 	 * Uploads a media asset file to Brightcove.
-	 * @access Private
+	 * @access Public
 	 * @since 1.0.0
 	 * @param string [$type] The type of object to upload
 	 * @param string [$file] The location of the temporary file
@@ -348,7 +348,7 @@ class Echove
 	 * @param array [$options] Optional upload values
 	 * @return mixed The media asset ID
 	 */
-	private function createMedia($type = 'video', $file = NULL, $meta, $options = NULL)
+	public function createMedia($type = 'video', $file = NULL, $meta, $options = NULL)
 	{
 		if(strtolower($type) == 'video')
 		{
@@ -426,7 +426,7 @@ class Echove
 		$post['method'] = strtolower('create_' . $type);
 		$post['params'] = $params;
 
-		$request['json'] = json_encode($post) . "\n";
+		$request['json'] = json_encode($post);
 
 		if($file)
 		{
@@ -1083,7 +1083,7 @@ class Echove
 				return $data;
 			}
 		} else {
-			throw new EchoveTransactionError($this, self::ERROR_READ_API_TRANSACTION_FAILED);
+			throw new EchoveApiError($this, self::ERROR_API_ERROR);
 		}
 	}
 
