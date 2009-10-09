@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0j (6 OCTOBER 2009)
+ * ECHOVE 1.0.0k (9 OCTOBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -244,7 +244,7 @@ class Echove
 				break;
 		}
 
-		if(isset($params['from_date']) || $default == 'from_date')
+		if(isset($params['from_date']) || (isset($default) && $default == 'from_date'))
 		{
 			if($default == 'from_date' && !isset($params['from_date']))
 			{
@@ -279,7 +279,7 @@ class Echove
 			}
 		}
 
-		if($default && !is_array($params))
+		if(isset($default) && !is_array($params))
 		{
 			$url = $this->appendParams($method, $params, $default);
 		} else {
@@ -883,8 +883,10 @@ class Echove
 			$filename .= '.flv';
 		}
 
-		if(strpos($flvUrl, '/d4/') !== FALSE)
+		if(strpos($flvUrl, '/d3/') !== FALSE)
 		{
+			$return = ('http://brightcove.vo.llnwd.net/pd3/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvUrl, '/d4/') !== FALSE) {
 			$return = ('http://brightcove.vo.llnwd.net/pd4/media/' . $matches[2] . '/' . $filename);
 		} elseif(strpos($flvUrl, '/d5/') !== FALSE) {
 			$return = ('http://brightcove.vo.llnwd.net/pd5/media/' . $matches[2] . '/' . $filename);
