@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0l (15 OCTOBER 2009)
+ * ECHOVE 1.0.0RC1 (15 OCTOBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
