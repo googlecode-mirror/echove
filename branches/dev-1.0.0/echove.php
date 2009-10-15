@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0k (9 OCTOBER 2009)
+ * ECHOVE 1.0.0l (15 OCTOBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -86,7 +86,7 @@ class Echove
 	public $page_number = NULL;
 	public $page_size = NULL;
 	public $total_count = NULL;
-	
+
 	private $api_calls = 0;
 	private $bit32 = FALSE;
 	private $secure = FALSE;
@@ -114,7 +114,7 @@ class Echove
 		$this->token_write = $token_write;
 		$this->bit32 = ((string)'99999999999999' == (int)'99999999999999') ? FALSE : TRUE;
 	}
-	
+
 	/**
 	 * Sets a property of the Echove class.
 	 * @access Public
@@ -132,7 +132,7 @@ class Echove
 			throw new EchoveInvalidProperty($this, self::ERROR_INVALID_PROPERTY);
 		}
 	}
-	
+
 	/**
 	 * Retrieves a property of the Echove class.
 	 * @access Public
@@ -161,7 +161,7 @@ class Echove
 	public function find($call, $params = NULL)
 	{
 		$call = strtolower(preg_replace('/(?:find|_)+/i', '', $call));
-		
+
 		switch($call)
 		{
 			case 'allvideos':
@@ -300,7 +300,7 @@ class Echove
 	public function findAll($type = 'video', $params = NULL)
 	{
 		$this->validType($type);
-		
+
 		$assets = array();
 		$current_page = 0;
 		$total_count = 0;
@@ -313,9 +313,9 @@ class Echove
 		while($current_page < $total_page)
 		{
 			$params['page_number'] = $current_page;
-			
+
 			$url = $this->appendParams(strtolower('find_all_' . $type . 's'), $params);
-			
+
 			$result = $this->getData($url);
 
 			if($total_count < 1)
@@ -337,7 +337,7 @@ class Echove
 
 		return $assets;
 	}
-	
+
 	/**
 	 * Uploads a media asset file to Brightcove.
 	 * @access Public
@@ -355,7 +355,7 @@ class Echove
 			if($file)
 			{
 				preg_match('/(\.f4a|\.f4b|\.f4v|\.f4p|\.flv)*$/i', $file, $invalid_extensions);
-	
+
 				if($invalid_extensions[1])
 				{
 					if(isset($options['encode_to']))
@@ -363,20 +363,20 @@ class Echove
 						unset($options['encode_to']);
 						$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
 					}
-					
+
 					if(isset($options['create_multiple_renditions']))
 					{
 						$options['create_multiple_renditions'] = 'FALSE';
 						$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
 					}
-					
+
 					if(isset($options['preserve_source_rendition']))
 					{
 						unset($options['preserve_source_rendition']);
 						$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
 					}
 				}
-				
+
 				if($options['create_multiple_renditions'] === TRUE && $options['H264NoProcessing'] === TRUE)
 				{
 					unset($options['H264NoProcessing']);
@@ -386,7 +386,7 @@ class Echove
 		} else {
 			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
 		}
-		
+
 		$request = array();
 		$post = array();
 		$params = array();
@@ -411,7 +411,7 @@ class Echove
 		{
 			$media['referenceId'] = time();
 		}
-		
+
 		if($options)
 		{
 			foreach($options as $key => $value)
@@ -422,7 +422,7 @@ class Echove
 
 		$params['token'] = $this->token_write;
 		$params[strtolower($type)] = $media;
-		
+
 		$post['method'] = strtolower('create_' . $type);
 		$post['params'] = $params;
 
@@ -435,7 +435,7 @@ class Echove
 
 		return $this->putData($request)->result;
 	}
-	
+
 	/**
 	 * Uploads a media image file to Brightcove.
 	 * @access Public
@@ -459,7 +459,7 @@ class Echove
 		{
 			$media[$key] = $value;
 		}
-		
+
 		if(!isset($media['referenceId']))
 		{
 			$media['referenceId'] = time();
@@ -483,7 +483,7 @@ class Echove
 
 		$params['token'] = $this->token_write;
 		$params['image'] = $media;
-		
+
 		$post['params'] = $params;
 
 		if(strtolower($type) == 'video')
@@ -527,7 +527,7 @@ class Echove
 		{
 			$media['referenceId'] = time();
 		}
-		
+
 		if(strtolower($type) == 'video')
 		{
 			if(isset($media['videoIds']))
@@ -545,7 +545,7 @@ class Echove
 		}
 
 		$params['token'] = $this->token_write;
-				
+
 		$post['params'] = $params;
 
 		$request['json'] = json_encode($post);
@@ -564,7 +564,7 @@ class Echove
 	public function update($type = 'video', $meta)
 	{
 		$this->validType($type);
-		
+
 		$request = array();
 		$post = array();
 		$media = array();
@@ -577,7 +577,7 @@ class Echove
 
 		$params['token'] = $this->token_write;
 		$params[strtolower($type)] = $media;
-		
+
 		$post['method'] = strtolower('update_' . $type);
 		$post['params'] = $params;
 
@@ -598,13 +598,13 @@ class Echove
 	public function delete($type = 'video', $id = NULL, $ref_id = NULL, $options = NULL)
 	{
 		$this->validType($type);
-		
+
 		$request = array();
 		$post = array();
 		$params = array();
 
 		$params['token'] = $this->token_write;
-		
+
 		if($options)
 		{
 			foreach($options as $key => $value)
@@ -668,7 +668,7 @@ class Echove
 		} else {
 			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
 		}
-		
+
 		$post['params'] = $params;
 
 		$request['json'] = json_encode($post) . "\n";
@@ -706,7 +706,7 @@ class Echove
 		} else {
 			$params['auto_accept'] = 'FALSE';
 		}
-		
+
 		if(strtolower($type) == 'video')
 		{
 			$params['video_id'] = $id;
@@ -714,7 +714,7 @@ class Echove
 		} else {
 			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
 		}
-		
+
 		$post['params'] = $params;
 
 		$request['json'] = json_encode($post) . "\n";
@@ -828,14 +828,14 @@ class Echove
 	public function filter($assets, $tags)
 	{
 		$filtered = array();
-		
+
 		foreach($assets as $asset)
 		{
 			foreach($asset->tags as $k => $v)
 			{
 				$asset->tags[$k] = strtolower($v);
 			}
-			
+
 			if(count(array_intersect(explode(',', strtolower($tags)), $asset->tags)) > 0)
 			{
 				$filtered[] = $asset;
@@ -883,8 +883,11 @@ class Echove
 			$filename .= '.flv';
 		}
 
-		if(strpos($flvUrl, '/d3/') !== FALSE)
-		{
+		if(strpos($flvUrl, '/o2/') !== FALSE) {
+			$return = ('http://brightcove.vo.llnwd.net/pd1/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvUrl, '/d2/') !== FALSE) {
+			$return = ('http://brightcove.vo.llnwd.net/pd2/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvUrl, '/d3/') !== FALSE) {
 			$return = ('http://brightcove.vo.llnwd.net/pd3/media/' . $matches[2] . '/' . $filename);
 		} elseif(strpos($flvUrl, '/d4/') !== FALSE) {
 			$return = ('http://brightcove.vo.llnwd.net/pd4/media/' . $matches[2] . '/' . $filename);
@@ -894,8 +897,6 @@ class Echove
 			$return = ('http://brightcove.vo.llnwd.net/pd6/media/' . $matches[2] . '/' . $filename);
 		} elseif(strpos($flvUrl, '/d7/') !== FALSE) {
 			$return = ('http://brightcove.vo.llnwd.net/pd7/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvUrl, '/o2/') !== FALSE) {
-			$return = ('http://brightcove.vo.llnwd.net/pd2/media/' . $matches[2] . '/' . $filename);
 		}
 
 		return $return;
@@ -984,7 +985,7 @@ class Echove
 
 		return $code;
 	}
-	
+
 	/**
 	 * Retrieves the appropriate API URL
 	 * @access Private
@@ -1000,7 +1001,7 @@ class Echove
 		} else {
 			$url = 'http://';
 		}
-		
+
 		if(strtolower($type) == 'read')
 		{
 			$url .= $this->url_read;
@@ -1009,7 +1010,7 @@ class Echove
 		} else {
 			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
 		}
-		
+
 		return $url;
 	}
 
@@ -1055,7 +1056,7 @@ class Echove
 		{
 			throw new EchoveTokenError($this, self::ERROR_READ_TOKEN_NOT_PROVIDED);
 		}
-		
+
 		$response = $this->curlRequest($url, TRUE);
 
 		if($response && $response != 'NULL')
@@ -1064,7 +1065,7 @@ class Echove
 
 			if(isset($response_object->error))
 			{
-				if($timeout_retry && $response_object->error->code == 103)
+				if($this->timeout_retry && $response_object->error->code == 103)
 				{
 					$this->getData($url);
 				} else {
@@ -1146,7 +1147,7 @@ class Echove
 		$this->api_calls++;
 
 		$curl_error = NULL;
-		
+
 		if(curl_errno($curl))
 		{
 			$curl_error = curl_error($curl);
@@ -1211,7 +1212,7 @@ class Echove
 	private function triggerError($err_code)
 	{
 		$text = $this->getErrorAsString($err_code);
-		
+
 		if($this->show_notices)
 		{
 			trigger_error($text, E_USER_NOTICE);
@@ -1280,13 +1281,13 @@ class EchoveException extends Exception
 	public function __construct(Echove $obj, $err_code, $raw_error_string = NULL)
 	{
 		$error = $obj->getErrorAsString($err_code);
-		
+
 		if($raw_error_string !== NULL)
 		{
 			$error .= "'.\nDetails: \n";
 			$error .= $raw_error_string->message ? $raw_error_string->message : $raw_error_string;
 		}
-		
+
 		parent::__construct($error, $err_code);
 	}
 }
