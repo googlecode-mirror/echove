@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0RC1 (15 OCTOBER 2009)
+ * ECHOVE 1.0.0RC2 (4 NOVEMBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -739,6 +739,7 @@ class Echove
 			return $total_seconds;
 		} else {
 			$time = '';
+			
 			$value = array(
 				'hours' => 0,
 				'minutes' => 0,
@@ -747,16 +748,16 @@ class Echove
 
 			if($total_seconds >= 3600)
 			{
-				$value['hours'] = floor($total_seconds/3600);
-				$total_seconds = ($total_seconds%3600);
+				$value['hours'] = floor($total_seconds / 3600);
+				$total_seconds = $total_seconds % 3600;
 
 				$time .= $value['hours'] . ':';
 			}
 
 			if($total_seconds >= 60)
 			{
-				$value['minutes'] = floor($total_seconds/60);
-				$total_seconds = ($total_seconds%60);
+				$value['minutes'] = floor($total_seconds / 60);
+				$total_seconds = $total_seconds % 60;
 
 				$time .= $value['minutes'] . ':';
 			} else {
@@ -1079,9 +1080,9 @@ class Echove
 					$data = $response_object;
 				}
 
-				$this->page_number = $response_object->page_number;
-				$this->page_size = $response_object->page_size;
-				$this->total_count = $response_object->total_count;
+				$this->page_number = isset($response_object->page_number) ? $response_object->page_number : NULL;
+				$this->page_size = isset($response_object->page_size) ? $response_object->page_size : NULL;
+				$this->total_count = isset($response_object->total_count) ? $response_object->total_count : NULL;
 
 				return $data;
 			}
@@ -1285,7 +1286,7 @@ class EchoveException extends Exception
 		if($raw_error_string !== NULL)
 		{
 			$error .= "'.\nDetails: \n";
-			$error .= $raw_error_string->message ? $raw_error_string->message : $raw_error_string;
+			$error .= isset($raw_error_string->message) ? $raw_error_string->message : $raw_error_string;
 		}
 
 		parent::__construct($error, $err_code);
