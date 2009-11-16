@@ -1,112 +1,167 @@
 <?php
 
 /**
- * ECHOVE
+ * ECHOVE 1.0.0 (16 NOVEMBER 2009)
  * A Brightcove PHP SDK
- * 
- * Official Website:
- *     http://echove.net/
- * Code Repository:
- *     http://code.google.com/p/echove/
- * Authors:
- *     Matthew Congrove, Professional Services Engineer, Brightcove
- *     Brian Franklin, Professional Services Engineer, Brightcove
- * Version:
- *     Echove 0.4.0 (19 AUGUST 2009)
- * Change Log:
- *     0.4.0 - Provided better logic for createVideo method. Fixed
- *             error reporting in createPlaylist, also included
- *             check to determine if video IDs are being passed.
- *     0.3.9 - Added share_video and get_upload_status methods.
- *             Corrected error for find_modified_videos return.
- *             Updated error codes and reporting points.
- *     0.3.8 - Improved debugging. Added new API find call, and
- *             get_item_count is now assumed as TRUE.
- *     0.3.7 - Fixed major error in Find method.
- *     0.3.6 - Added debug information, video tag filtering, and
- *             a true Find All Videos function.
- *     0.3.5 - Added support for 32-bit servers. Error reporting
- *             can now be configured during instantiation. Fixed
- *             URL encoding issue. Added support for tag arrays.
- *     0.3.4 - Improved error reporting. Added image upload.
- *     0.3.3 - Fixed RTMP to HTTP URL function. Fixed video upload.
- *     0.3.2 - Added RTMP to HTTP URL function, and function to
- *             easily parse video tags. Improved SEF function.
- *             Added support for remote assets.
- *     0.3.1 - Improved error reporting.
- *     0.3.0 - Added Write API methods for creating, updating, and
- *             deleting both videos and playlists.
- *     0.2.2 - Fix to remove notices. Added embed method. Corrected
- *             video lengths.
- *     0.2.1 - Setting default values to remove notices. Added inline
- *             code documentation. Added utilities to convert video
- *             lengths from milliseconds to formatted time or seconds
- *             for ease of use and to convert video names to a
- *             search-engine friendly format.
- *     0.2.0 - Updated to include API return properties.
- *     0.1.0 - Initial release.
- * 
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or
- * sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
+ *
+ * REFERENCES:
+ *	 Official Website: http://echove.net/
+ *	 Code Repository: http://code.google.com/p/echove/
+ *
+ * AUTHORS:
+ *	 Matthew Congrove, Professional Services Engineer, Brightcove
+ *	 Brian Franklin, Professional Services Engineer, Brightcove
+ *
+ * CONTRIBUTORS:
+ *	 Luke Weber, Kristen McGregor, Brandon Aaskov, Jesse Streb
+ *
+ * CHANGE LOG:
+ *	 1.0.0 - Added new methods, including a unified putData, a setter and a getter, a URL
+ *			 fetcher, a 32-bit cleanser, a unified cURL request, a type-check verifyer,
+ *			 and a readable-error retriever. Added numerous new error improvements
+ *			 including exception handling and more stringent checks. Made numerous
+ *			 efficiency improvements. Added support for various asset types. Simplified
+ *			 numerous method calls. Added new properties and better-defined existing
+ *			 properties. Added changes for various Brightcove API updates. Added API
+ *			 call fail-over options. Added better protection for various properties.
+ *			 Updated LimeLight URL converter. Implemented HTTPS support. Added return
+ *			 data for update method. Added return of API error text.
+ *	 0.4.0 - Provided better logic for createVideo method. Fixed error reporting in
+ *			 createPlaylist, also included check to determine if video IDs are being
+ *			 passed.
+ *	 0.3.9 - Added share_video and get_upload_status methods. Corrected error for
+ *			 find_modified_videos return. Updated error codes and reporting points.
+ *	 0.3.8 - Improved debugging. Added new API find call, and get_item_count is now
+ *			 assumed as TRUE.
+ *	 0.3.7 - Fixed major error in Find method.
+ *	 0.3.6 - Added debug information, video tag filtering, and a true Find All Videos
+ *			 function.
+ *	 0.3.5 - Added support for 32-bit servers. Error reporting can now be configured
+ *			 during instantiation. Fixed URL encoding issue. Added support for tag
+ *			 arrays.
+ *	 0.3.4 - Improved error reporting. Added image upload.
+ *	 0.3.3 - Fixed RTMP to HTTP URL function. Fixed video upload.
+ *	 0.3.2 - Added RTMP to HTTP URL function, and function to easily parse video tags.
+ *			 Improved SEF function. Added support for remote assets.
+ *	 0.3.1 - Improved error reporting.
+ *	 0.3.0 - Added Write API methods for creating, updating, and deleting both videos
+ *			 and playlists.
+ *	 0.2.2 - Fix to remove notices. Added embed method. Corrected video lengths.
+ *	 0.2.1 - Setting default values to remove notices. Added inline code documentation.
+ *			 Added utilities to convert video lengths from milliseconds to formatted
+ *			 time or secondsfor ease of use and to convert video names to a search-
+ *			 engine friendly format.
+ *	 0.2.0 - Updated to include API return properties.
+ *	 0.1.0 - Initial release.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this
+ * software and associated documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following
  * conditions:
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+ * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 class Echove
 {
+	const ERROR_API_ERROR = 1;
+	const ERROR_ID_NOT_PROVIDED = 2;
+	const ERROR_INVALID_METHOD = 3;
+	const ERROR_INVALID_PROPERTY = 4;
+	const ERROR_INVALID_FILE_TYPE = 5;
+	const ERROR_INVALID_TYPE = 6;
+	const ERROR_INVALID_UPLOAD_OPTION = 7;
+	const ERROR_READ_API_TRANSACTION_FAILED = 8;
+	const ERROR_READ_TOKEN_NOT_PROVIDED = 9;
+	const ERROR_WRITE_API_TRANSACTION_FAILED = 10;
+	const ERROR_WRITE_TOKEN_NOT_PROVIDED = 11;
 
-   /**
-    * @access Public
-    * @since 0.1.0
-    * @param string [$token_read] The read API token for the Brightcove account
-    * @param string [$token_write] The write API token for the Brightcove account
-    * @param bool [$show_errors] Whether or not to show Echove errors
-    */
-	public function __construct($token_read, $token_write = NULL, $show_errors = FALSE)
-	{	
+	public $page_number = NULL;
+	public $page_size = NULL;
+	public $total_count = NULL;
+
+	private $api_calls = 0;
+	private $bit32 = FALSE;
+	private $secure = FALSE;
+	private $show_notices = FALSE;
+	private $timeout_retry = FALSE;
+	private $token_read = NULL;
+	private $token_write = NULL;
+	private $url_read = 'api.brightcove.com/services/library?';
+	private $url_write = 'api.brightcove.com/services/post';
+	private $valid_types = array(
+		'playlist',
+		'video'
+	);
+
+	/**
+	 * The constructor for the Echove class.
+	 * @access Public
+	 * @since 0.1.0
+	 * @param string [$token_read] The read API token for the Brightcove account
+	 * @param string [$token_write] The write API token for the Brightcove account
+	 */
+	public function __construct($token_read = NULL, $token_write = NULL)
+	{
 		$this->token_read = $token_read;
 		$this->token_write = $token_write;
-		$this->show_errors = $show_errors;
-		$this->read_url = 'http://api.brightcove.com/services/library?';
-		$this->write_url = 'http://api.brightcove.com/services/post';
-		$this->page_number = NULL;
-		$this->page_size = NULL;
-		$this->total_count = NULL;
-		$this->bit32 = ((string)'99999999999999' == (int)'99999999999999') ? TRUE : FALSE;
-		$this->api_calls = 0;
+		$this->bit32 = ((string)'99999999999999' == (int)'99999999999999') ? FALSE : TRUE;
+	}
 
-		if(!$token_read)
+	/**
+	 * Sets a property of the Echove class.
+	 * @access Public
+	 * @since 1.0.0
+	 * @param string [$key] The property to set
+	 * @param mixed [$value] The new value for the property
+	 * @return mixed The new value of the property
+	 */
+	public function __set($key, $value)
+	{
+		if(isset($this->$key) || is_null($this->$key))
 		{
-			$this->triggerError('001');
-			return FALSE;
+			$this->$key = $value;
+		} else {
+			throw new EchoveInvalidProperty($this, self::ERROR_INVALID_PROPERTY);
 		}
 	}
-	
-   /**
-    * Formats the API request URL, retrieves the data, and returns it.
-    * @access Public
-    * @since 0.1.0
-    * @param string [$call] The requested API method
-    * @param array [$params] A key-value array of API parameters and values
-    * @return object An object containing all API return data
-    */
+
+	/**
+	 * Retrieves a property of the Echove class.
+	 * @access Public
+	 * @since 1.0.0
+	 * @param string [$key] The property to retrieve
+	 * @return mixed The value of the property
+	 */
+	public function __get($key)
+	{
+		if(isset($this->$key) || is_null($this->$key))
+		{
+			return $this->$key;
+		} else {
+			throw new EchoveInvalidProperty($this, self::ERROR_INVALID_PROPERTY);
+		}
+	}
+
+	/**
+	 * Formats the request for any API 'Find' methods and retrieves the data.
+	 * @access Public
+	 * @since 0.1.0
+	 * @param string [$call] The requested API method
+	 * @param mixed [$params] A key-value array of API parameters, or a single value that matches the default
+	 * @return object An object containing all API return data
+	 */
 	public function find($call, $params = NULL)
 	{
-		$call = strtolower(str_replace('find', '', str_replace('_', '', $call)));
-		
+		$call = strtolower(preg_replace('/(?:find|_)+/i', '', $call));
+
 		switch($call)
 		{
 			case 'allvideos':
@@ -116,7 +171,6 @@ class Echove
 			case 'videobyid':
 				$method = 'find_video_by_id';
 				$default = 'video_id';
-				$get_item_count = FALSE;
 				break;
 			case 'relatedvideos':
 				$method = 'find_related_videos';
@@ -126,17 +180,14 @@ class Echove
 			case 'videosbyids':
 				$method = 'find_videos_by_ids';
 				$default = 'video_ids';
-				$get_item_count = FALSE;
 				break;
 			case 'videobyreferenceid':
 				$method = 'find_video_by_reference_id';
 				$default = 'reference_id';
-				$get_item_count = FALSE;
 				break;
 			case 'videosbyreferenceids':
 				$method = 'find_videos_by_reference_ids';
 				$default = 'reference_ids';
-				$get_item_count = FALSE;
 				break;
 			case 'videosbyuserid':
 				$method = 'find_videos_by_user_id';
@@ -170,22 +221,18 @@ class Echove
 			case 'playlistbyid':
 				$method = 'find_playlist_by_id';
 				$default = 'playlist_id';
-				$get_item_count = FALSE;
 				break;
 			case 'playlistsbyids':
 				$method = 'find_playlists_by_id';
 				$default = 'playlist_ids';
-				$get_item_count = FALSE;
 				break;
 			case 'playlistbyreferenceid':
 				$method = 'find_playlist_by_reference_id';
 				$default = 'reference_id';
-				$get_item_count = FALSE;
 				break;
 			case 'playlistsbyreferenceids':
 				$method = 'find_playlists_by_reference_ids';
 				$default = 'reference_ids';
-				$get_item_count = FALSE;
 				break;
 			case 'playlistsforplayerid':
 				$method = 'find_playlists_for_player_id';
@@ -193,12 +240,11 @@ class Echove
 				$get_item_count = TRUE;
 				break;
 			default:
-				$this->triggerError('005');
-				return FALSE;
+				throw new EchoveInvalidMethod($this, self::ERROR_INVALID_METHOD);
 				break;
 		}
-		
-		if(isset($params['from_date']) || $default == 'from_date')
+
+		if(isset($params['from_date']) || (isset($default) && $default == 'from_date'))
 		{
 			if($default == 'from_date' && !isset($params['from_date']))
 			{
@@ -206,12 +252,12 @@ class Echove
 			} else {
 				$from_date = (string)$params['from_date'];
 			}
-			
+
 			if(strlen($from_date) > 9)
 			{
 				$from_date = floor((int)$from_date / 60);
 			}
-			
+
 			if(!is_array($params) && $default == 'from_date')
 			{
 				$params = $from_date;
@@ -219,8 +265,8 @@ class Echove
 				$params['from_date'] = $from_date;
 			}
 		}
-		
-		if($get_item_count)
+
+		if(isset($get_item_count))
 		{
 			if(!isset($params['get_item_count']))
 			{
@@ -228,42 +274,38 @@ class Echove
 				{
 					$params[$default] = $params;
 				}
-				
+
 				$params['get_item_count'] = 'TRUE';
 			}
 		}
-		
-		if($default && !is_array($params)) {
+
+		if(isset($default) && !is_array($params))
+		{
 			$url = $this->appendParams($method, $params, $default);
-		} else {			
+		} else {
 			$url = $this->appendParams($method, $params);
 		}
 
-		$result = $this->getData($url);
-		
-		if($result->error)
-		{
-			$this->triggerError('11');
-			return FALSE;
-		} else {
-			return $result;
-		}
+		return $this->getData($url);
 	}
-	
-   /**
-    * Finds all videos in account, ignoring pagination
-    * @access Public
-    * @since 0.3.6
-    * @param array [$params] A key-value array of API parameters and values
-    * @return object An object containing all API return data
-    */
-	public function findAll($params = NULL)
+
+	/**
+	 * Finds all media assets in account, ignoring pagination.
+	 * @access Public
+	 * @since 0.3.6
+	 * @param string [$type] The type of object to retrieve
+	 * @param array [$params] A key-value array of API parameters
+	 * @return object An object containing all API return data
+	 */
+	public function findAll($type = 'video', $params = NULL)
 	{
-		$videos = array();
+		$this->validType($type);
+
+		$assets = array();
 		$current_page = 0;
 		$total_count = 0;
 		$total_page = 1;
-		
+
 		$params['get_item_count'] = 'TRUE';
 		$params['page_size'] = 100;
 		$params['page_number'] = 0;
@@ -271,756 +313,481 @@ class Echove
 		while($current_page < $total_page)
 		{
 			$params['page_number'] = $current_page;
-			
-			$url = $this->appendParams('find_all_videos', $params);
+
+			$url = $this->appendParams(strtolower('find_all_' . $type . 's'), $params);
+
 			$result = $this->getData($url);
-			
+
 			if($total_count < 1)
 			{
 				$total_count = $this->total_count;
 				$total_page = ceil($total_count / 100);
 			}
-			
-			if($result->error)
+
+			if(is_array($result))
 			{
-				$this->triggerError('011');
-				return FALSE;
-			} else {
-				foreach($result as $video)
+				foreach($result as $asset)
 				{
-					$videos[] = $video;
+					$assets[] = $asset;
 				}
 			}
-			
+
 			$current_page++;
 		}
-		
-		return $videos;
+
+		return $assets;
 	}
 
-   /**
-    * Appends API parameters onto API request URL
-    * @access Private
-    * @since 0.1.0
-    * @param string [$method] The requested API method
-    * @param array [$params] A key-value array of API parameters and values
-    * @param string [$default] The default API parameter if only 1 provided
-    * @return string The complete API request URL
-    */
-	private function appendParams($method, $params = NULL, $default = NULL)
+	/**
+	 * Uploads a media asset file to Brightcove.
+	 * @access Public
+	 * @since 1.0.0
+	 * @param string [$type] The type of object to upload
+	 * @param string [$file] The location of the temporary file
+	 * @param array [$meta] The media asset information
+	 * @param array [$options] Optional upload values
+	 * @return mixed The media asset ID
+	 */
+	public function createMedia($type = 'video', $file = NULL, $meta, $options = NULL)
 	{
-		$url = $this->read_url . 'token=' . $this->token_read . '&command=' . $method;
-		
-		if($params)
+		if(strtolower($type) == 'video')
 		{
-			if($default)
+			if($file)
 			{
-				$url .= '&' . $default . '=' . urlencode($params);
-			} else {
-				foreach($params as $option => $value)
+				preg_match('/(\.f4a|\.f4b|\.f4v|\.f4p|\.flv)*$/i', $file, $invalid_extensions);
+
+				if($invalid_extensions[1])
 				{
-					$url .= '&' . $option . '=' . urlencode($value);
+					if(isset($options['encode_to']))
+					{
+						unset($options['encode_to']);
+						$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
+					}
+
+					if(isset($options['create_multiple_renditions']))
+					{
+						$options['create_multiple_renditions'] = 'FALSE';
+						$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
+					}
+
+					if(isset($options['preserve_source_rendition']))
+					{
+						unset($options['preserve_source_rendition']);
+						$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
+					}
 				}
-			}
-		}
-		
-		return $url;
-	}
 
-   /**
-    * Retrieves API data from provided URL
-    * @access Private
-    * @since 0.1.0
-    * @param string [$url] The complete API request URL
-    * @return object An object containing all API return data
-    */
-	private function getData($url)
-	{
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $url);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-
-		if(curl_errno($curl))
-		{
-			$this->triggerError('003');
-			echo curl_error($curl);
-			return FALSE;
-		}
-
-		curl_close($curl);
-		
-		if($this->bit32)
-		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
-		}
-		
-		if($response)
-		{
-			if($response != 'NULL')
-			{
-				$json = json_decode($response);
-
-				if(isset($json->items))
+				if($options['create_multiple_renditions'] === TRUE && $options['H264NoProcessing'] === TRUE)
 				{
-					$data = $json->items;
-				} else {
-					$data = $json;
+					unset($options['H264NoProcessing']);
+					$this->triggerError(self::ERROR_INVALID_UPLOAD_OPTION);
 				}
-				
-				$this->page_number = $json->page_number;
-				$this->page_size = $json->page_size;
-				$this->total_count = $json->total_count;
-				
-				return $data;
-			} else {
-				return FALSE;
 			}
 		} else {
-			$this->triggerError('003');
-			return FALSE;
-		}
-	}
-	
-   /**
-    * Uploads a video file to Brightcove
-    * @access Public
-    * @since 0.3.0
-    * @param string [$file] The location of the temporary file
-    * @param array [$meta] The video information
-    * @param bool [$multiple] Whether or not to create multiple renditions
-    * @return mixed The video ID if successful, otherwise FALSE
-    */
-	public function createVideo($file = NULL, $meta, $multiple = FALSE)
-	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
+			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
 		}
 
 		$request = array();
 		$post = array();
 		$params = array();
-		$video = array();
-		
+		$media = array();
+
 		foreach($meta as $key => $value)
 		{
-			$video[$key] = $value;
+			$media[$key] = $value;
 		}
-		
-		if(!$video['referenceId'])
+
+		if(!isset($media['name']))
 		{
-			$video['referenceId'] = time();
+			$media['name'] = time();
 		}
-		
+
+		if(!isset($media['shortDescription']))
+		{
+			$media['shortDescription'] = time();
+		}
+
+		if(!isset($media['referenceId']))
+		{
+			$media['referenceId'] = time();
+		}
+
+		if($options)
+		{
+			foreach($options as $key => $value)
+			{
+				$params[$key] = $value;
+			}
+		}
+
 		$params['token'] = $this->token_write;
-		$params['video'] = $video;
-		
-		if(!isset($meta['create_multiple_renditions']))
-		{
-			if($multiple)
-			{
-				$params['create_multiple_renditions'] = 'TRUE';
-			} else {
-				$params['create_multiple_renditions'] = 'FALSE';
-			}
-		}
-		
-		if($file && isset($params['create_multiple_renditions']))
-		{
-			$extension = substr(strtolower($file), -3);
-			$vp6 = array('f4a', 'f4b', 'f4v', 'f4p', 'flv');
-			
-			if(in_array($extension, $vp6))
-			{
-				$params['create_multiple_renditions'] = 'FALSE';
-				$this->triggerError('013');
-			}
-		}
-		
-		$post['method'] = 'create_video';
+		$params[strtolower($type)] = $media;
+
+		$post['method'] = strtolower('create_' . $type);
 		$post['params'] = $params;
-		
-		$request['json'] = json_encode($post) . "\n";
-		
+
+		$request['json'] = json_encode($post);
+
 		if($file)
 		{
 			$request['file'] = '@' . $file;
 		}
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('010');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-		
-		if($this->bit32)
-		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
-		}
-		
-		$json = json_decode($response);
 
-		if($json->result)
-		{
-			return $json->result;
-		} else {
-			$this->triggerError('011');
-			return FALSE;
-		}
+		return $this->putData($request)->result;
 	}
-	
-   /**
-    * Retrieves the status of a video upload
-    * @access Public
-    * @since 0.3.9
-    * @param int [$video_id] The ID of the video asset
-    * @param string [$ref_id] The reference ID of the video asset
-    * @return string The upload status
-    */
-	public function getStatus($video_id = NULL, $ref_id = TRUE)
+
+	/**
+	 * Uploads a media image file to Brightcove.
+	 * @access Public
+	 * @since 0.3.4
+	 * @param string [$type] The type of object to upload
+	 * @param string [$file] The location of the temporary file
+	 * @param array [$meta] The image information
+	 * @param int [$id] The ID of the media asset to assign the image to
+	 * @param string [$ref_id] The reference ID of the media asset to assign the image to
+	 * @param bool [$resize] Whether or not to resize the image on upload
+	 * @return mixed The image asset ID
+	 */
+	public function createImage($type = 'video', $file = NULL, $meta, $id = NULL, $ref_id = NULL, $resize = TRUE)
 	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-		
-		if(!$video_id && !$ref_id)
-		{
-			$this->triggerError('008');
-		}
-		
 		$request = array();
 		$post = array();
 		$params = array();
-		
-		$params['token'] = $this->token_write;
-		
-		if($video_id)
-		{
-			$params['video_id'] = $video_id;
-		}
-		
-		if($ref_id)
-		{
-			$params['reference_id'] = $ref_id;
-		}
-		
-		$post['method'] = 'get_upload_status';
-		$post['params'] = $params;
-		
-		$request['json'] = json_encode($post) . "\n";
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('004');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-		
-		$json = json_decode($response);
+		$media = array();
 
-		if($json->result)
-		{
-			return $json->result;
-		} else {
-			$this->triggerError('011');
-			return FALSE;
-		}
-	}
-	
-   /**
-    * Uploads an image file to Brightcove
-    * @access Public
-    * @since 0.3.4
-    * @param string [$file] The location of the temporary file
-    * @param array [$meta] The image information
-    * @param int [$video_id] The ID of the video asset to assign the image to
-    * @param bool [$resize] Whether or not to resize the image on upload
-    * @return mixed The image asset ID if successful, otherwise FALSE
-    */
-	public function createImage($file = NULL, $meta, $video_id = NULL, $resize = TRUE)
-	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-		
-		$request = array();
-		$post = array();
-		$image = array();
-		$params = array();
-		
 		foreach($meta as $key => $value)
 		{
-			$image[$key] = $value;
+			$media[$key] = $value;
 		}
-		
-		if(!$image['referenceId'])
+
+		if(!isset($media['referenceId']))
 		{
-			$image['referenceId'] = time();
+			$media['referenceId'] = time();
 		}
-		
-		$params['token'] = $this->token_write;
-		$params['image'] = $image;
-		
-		if($video_id)
+
+		if($id)
 		{
-			$params['video_id'] = $video_id;
+			$params[strtolower($type) . '_id'] = $id;
+		} elseif($ref_id) {
+			$params[strtolower($type) . '_reference_id'] = $ref_id;
 		} else {
-			$this->triggerError('008');
-			return FALSE;
+			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
 		}
-		
+
 		if($resize)
 		{
 			$params['resize'] = 'TRUE';
 		} else {
 			$params['resize'] = 'FALSE';
 		}
-		
-		$post['method'] = 'add_image';
+
+		$params['token'] = $this->token_write;
+		$params['image'] = $media;
+
 		$post['params'] = $params;
-		
+
+		if(strtolower($type) == 'video')
+		{
+			$post['method'] = 'add_image';
+		} else {
+			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
+		}
+
 		$request['json'] = json_encode($post) . "\n";
-		
+
 		if($file)
 		{
 			$request['file'] = '@' . $file;
 		}
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('012');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-		
-		if($this->bit32)
-		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
-		}
-		
-		$json = json_decode($response);
 
-		if($json->result)
-		{
-			return $json->result->id;
-		} else {
-			$this->triggerError('011');
-			return FALSE;
-		}
+		return $this->putData($request)->result;
 	}
 
-   /**
-    * Creates a playlist
-    * @access Public
-    * @since 0.3.0
-    * @param array [$meta] The playlist information
-    * @return mixed The playlist ID if successful, otherwise FALSE
-    */
-	public function createPlaylist($meta)
+	/**
+	 * Creates a playlist.
+	 * @access Public
+	 * @since 0.3.0
+	 * @param string [$type] The type of playlist to create
+	 * @param array [$meta] The playlist information
+	 * @return mixed The playlist ID
+	 */
+	public function createPlaylist($type = 'video', $meta)
 	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-
 		$request = array();
 		$post = array();
 		$params = array();
-		$playlist = array();
-		
+		$media = array();
+
 		foreach($meta as $key => $value)
 		{
-			$playlist[$key] = $value;
+			$media[$key] = $value;
 		}
-		
-		if(!$playlist['referenceId'])
+
+		if(!isset($media['referenceId']))
 		{
-			$playlist['referenceId'] = time();
+			$media['referenceId'] = time();
 		}
-		
-		if(isset($playlist['videoIds']))
+
+		if(strtolower($type) == 'video')
 		{
-			if($playlist['playlistType'] != 'explicit')
+			if(isset($media['videoIds']))
 			{
-				foreach($playlist['videoIds'] as $key => $value)
+				foreach($media['videoIds'] as $key => $value)
 				{
-					$playlist['videoIds'][$key] = (int)$value;
+					$media['videoIds'][$key] = (int)$value;
 				}
 			}
+
+			$params['playlist'] = $media;
+			$post['method'] = 'create_playlist';
+		} else {
+			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
 		}
-		
+
 		$params['token'] = $this->token_write;
-		$params['playlist'] = $playlist;
-		
-		$post['method'] = 'create_playlist';
+
 		$post['params'] = $params;
-		
+
 		$request['json'] = json_encode($post);
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('004');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-		
-		if($this->bit32)
-		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
-		}
-		
-		$json = json_decode($response);
 
-		if($json->result)
-		{
-			return $json->result;
-		} else {
-			$this->triggerError('011');
-			return FALSE;
-		}
+		return $this->putData($request)->result;
 	}
-	
-   /**
-    * Updates a video or playlist
-    * @access Public
-    * @since 0.3.0
-    * @param string [$type] The item to update, either a video or playlist
-    * @param array [$meta] The information for the video or playlist
-    */
-	public function update($type, $meta)
+
+	/**
+	 * Updates a media asset.
+	 * @access Public
+	 * @since 0.3.0
+	 * @param string [$type] The type of object to update
+	 * @param array [$meta] The information for the media asset
+	 * @return object The new DTO
+	 */
+	public function update($type = 'video', $meta)
 	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-		
+		$this->validType($type);
+
 		$request = array();
 		$post = array();
+		$media = array();
 		$params = array();
-		$metaData = array();
+
+		foreach($meta as $key => $value)
+		{
+			$media[$key] = $value;
+		}
 
 		$params['token'] = $this->token_write;
-		
-		if(strtolower($type) == 'video')
-		{		
-			foreach($meta as $key => $value)
-			{
-				$metaData[$key] = $value;
-			}
-		
-			$params['video'] = $metaData;
-			$post['method'] = 'update_video';
-		} elseif(strtolower($type) == 'playlist') {	
-			foreach($meta as $key => $value)
-			{
-				$metaData[$key] = $value;
-			}
-				
-			$params['playlist'] = $metaData;
-			$post['method'] = 'update_playlist';
-		} else {
-			$this->triggerError('006');
-			return FALSE;
-		}
-		
+		$params[strtolower($type)] = $media;
+
+		$post['method'] = strtolower('update_' . $type);
 		$post['params'] = $params;
-		
+
 		$request['json'] = json_encode($post) . "\n";
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('004');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
+
+		return $this->putData($request)->result;
 	}
-	
-   /**
-    * Deletes a video or playlist
-    * @access Public
-    * @since 0.3.0
-    * @param string [$type] The item to delete, either a video or playlist
-    * @param int [$id] The ID of the video or playlist
-    * @param string [$ref_id] The reference ID of the video or playlist
-    * @param bool [$cascade] Whether or not to cascade the deletion
-    */
-	public function delete($type, $id = NULL, $ref_id = NULL, $cascade = TRUE)
+
+	/**
+	 * Deletes a media asset.
+	 * @access Public
+	 * @since 0.3.0
+	 * @param string [$type] The type of item to delete
+	 * @param int [$id] The ID of the media asset
+	 * @param string [$ref_id] The reference ID of the media asset
+	 * @param array [$options] Optional upload values
+	 */
+	public function delete($type = 'video', $id = NULL, $ref_id = NULL, $options = NULL)
 	{
-		if(!$this->token_write)
-		{
-			$this->triggerError('002');
-			return FALSE;
-		}
-		
+		$this->validType($type);
+
 		$request = array();
 		$post = array();
 		$params = array();
 
 		$params['token'] = $this->token_write;
-		$params['cascade'] = $cascade;
-		
+
+		if($options)
+		{
+			foreach($options as $key => $value)
+			{
+				$params[$key] = $value;
+			}
+		}
+
+		if($id)
+		{
+			$params[strtolower($type . '_id')] = $id;
+		} elseif($ref_id) {
+			$params['reference_id'] = $ref_id;
+		} else {
+			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
+		}
+
+		$post['method'] = strtolower('delete_' . $type);
+		$post['params'] = $params;
+
+		$request['json'] = json_encode($post) . "\n";
+
+		return $this->putData($request, FALSE);
+	}
+
+	/**
+	 * Retrieves the status of a media asset upload.
+	 * @access Public
+	 * @since 0.3.9
+	 * @param string [$type] The type of object to check
+	 * @param int [$id] The ID of the media asset
+	 * @param string [$ref_id] The reference ID of the media asset
+	 * @return string The upload status
+	 */
+	public function getStatus($type = 'video', $id = NULL, $ref_id = TRUE)
+	{
+		if(!isset($id) && !isset($ref_id))
+		{
+			$this->triggerError(self::ERROR_ID_NOT_PROVIDED);
+		}
+
+		$request = array();
+		$post = array();
+		$params = array();
+
+		$params['token'] = $this->token_write;
+
+		if($id)
+		{
+			$params[strtolower($type) . '_id'] = $id;
+		}
+
+		if($ref_id)
+		{
+			$params['reference_id'] = $ref_id;
+		}
+
 		if(strtolower($type) == 'video')
 		{
-			if($id)
-			{
-				$params['video_id'] = $id;
-			} elseif($ref_id) {
-				$params['reference_id'] = $ref_id;
-			} else {
-				$this->triggerError('008');
-				return FALSE;
-			}
-			
-			$post['method'] = 'delete_video';
-		} elseif(strtolower($type) == 'playlist') {
-			if($id)
-			{
-				$params['playlist_id'] = $id;
-			} elseif($ref_id) {
-				$params['reference_id'] = $ref_id;
-			} else {
-				$this->triggerError('008');
-				return FALSE;
-			}
-			
-			$post['method'] = 'delete_playlist';
+			$post['method'] = 'get_upload_status';
 		} else {
-			$this->triggerError('006');
-			return FALSE;
+			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
 		}
-		
+
 		$post['params'] = $params;
-		
+
 		$request['json'] = json_encode($post) . "\n";
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
-		{
-			$this->triggerError('004');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
+
+		return $this->putData($request)->result;
 	}
-	
-   /**
-    * Shares a video with the selected accounts
-    * @access Public
-    * @since 0.3.9
-    * @param int [$video_id] The ID of the video asset
-    * @param array [$account_ids] An array of account IDs
-    * @param bool [$accept] Whether the share should be auto accepted
-    * @return array The new video IDs
-    */
-	public function shareVideo($video_id, $account_ids, $accept = FALSE)
+
+	/**
+	 * Shares a media asset with the selected accounts.
+	 * @access Public
+	 * @since 1.0.0
+	 * @param string [$type] The type of object to check
+	 * @param int [$id] The ID of the media asset
+	 * @param array [$account_ids] An array of account IDs
+	 * @param bool [$accept] Whether the share should be auto accepted
+	 * @return array The new media asset IDs
+	 */
+	public function shareMedia($type = 'video', $id, $account_ids, $accept = FALSE)
 	{
-		if(!$this->token_write)
+		if(!isset($id))
 		{
-			$this->triggerError('002');
-			return FALSE;
+			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
 		}
-		
-		if(!$video_id)
-		{
-			$this->triggerError('008');
-			return FALSE;
-		}
-		
+
 		$request = array();
 		$post = array();
 		$params = array();
-		
+
 		$params['token'] = $this->token_write;
-		$params['video_id'] = $video_id;
 		$params['sharee_account_ids'] = $account_ids;
-		
+
 		if($accept)
 		{
 			$params['auto_accept'] = 'TRUE';
 		} else {
 			$params['auto_accept'] = 'FALSE';
 		}
-		
-		$post['method'] = 'share_video';
-		$post['params'] = $params;
-		
-		$request['json'] = json_encode($post) . "\n";
-		
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $this->write_url);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		$response = curl_exec($curl);
-		
-		$this->api_calls++;
-		
-		if(curl_errno($curl))
+
+		if(strtolower($type) == 'video')
 		{
-			$this->triggerError('004');
-			echo curl_error($curl);
-			return FALSE;
-		}
-		
-		curl_close($curl);
-		
-		$json = json_decode($response);
-		
-		if($json->result)
-		{
-			return $json->result;
+			$params['video_id'] = $id;
+			$post['method'] = 'share_video';
 		} else {
-			$this->triggerError('011');
-			return FALSE;
+			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
 		}
+
+		$post['params'] = $params;
+
+		$request['json'] = json_encode($post) . "\n";
+
+		return $this->putData($request)->result;
 	}
-	
-   /**
-    * Converts milliseconds to formatted time or seconds
-    * @access Public
-    * @since 0.2.1
-    * @param int [$ms] The length of the video in milliseconds
-    * @param bool [$seconds] Whether to return only seconds
-    * @return mixed The formatted length or total seconds of the video
-    */
+
+	/**
+	 * Converts milliseconds to formatted time or seconds.
+	 * @access Public
+	 * @since 0.2.1
+	 * @param int [$ms] The length of the media asset in milliseconds
+	 * @param bool [$seconds] Whether to return only seconds
+	 * @return mixed The formatted length or total seconds of the media asset
+	 */
 	public function time($ms, $seconds = FALSE)
 	{
 		$total_seconds = ($ms / 1000);
-			
+
 		if($seconds)
 		{
 			return $total_seconds;
 		} else {
 			$time = '';
+			
 			$value = array(
 				'hours' => 0,
 				'minutes' => 0,
 				'seconds' => 0
 			);
-			
-			if($total_seconds >= 3600) {
-				$value['hours'] = floor($total_seconds/3600);
-				$total_seconds = ($total_seconds%3600);
+
+			if($total_seconds >= 3600)
+			{
+				$value['hours'] = floor($total_seconds / 3600);
+				$total_seconds = $total_seconds % 3600;
 
 				$time .= $value['hours'] . ':';
 			}
-			
-			if($total_seconds >= 60) {
-				$value['minutes'] = floor($total_seconds/60);
-				$total_seconds = ($total_seconds%60);
-				
+
+			if($total_seconds >= 60)
+			{
+				$value['minutes'] = floor($total_seconds / 60);
+				$total_seconds = $total_seconds % 60;
+
 				$time .= $value['minutes'] . ':';
 			} else {
 				$time .= '0:';
 			}
-			
+
 			$value['seconds'] = floor($total_seconds);
-			
+
 			if($value['seconds'] < 10)
 			{
 				$value['seconds'] = '0' . $value['seconds'];
 			}
-			
+
 			$time .= $value['seconds'];
-			
+
 			return $time;
 		}
 	}
-	
-   /**
-    * Parses video tags array into a key-value array
-    * @access Public
-    * @since 0.3.2
-    * @param array [$tags] The tags array from a video DTO
-    * @return array A key-value array of tags
-    */
+
+	/**
+	 * Parses media asset tags array into a key-value array.
+	 * @access Public
+	 * @since 0.3.2
+	 * @param array [$tags] The tags array from a media asset DTO
+	 * @return array A key-value array of tags
+	 */
 	public function tags($tags)
 	{
 		$return = array();
-	
+
 		if(count($tags) > 0)
 		{
 			foreach($tags as $tag)
@@ -1032,7 +799,7 @@ class Echove
 					$group = explode('=', $tag);
 					$key = trim($group[0]);
 					$value = trim($group[1]);
-					
+
 					if(!isset($return[$key]))
 					{
 						$return[$key] = $value;
@@ -1047,104 +814,113 @@ class Echove
 				}
 			}
 		}
-	
+
 		return $return;
 	}
-	
-   /**
-    * Removes videos that don't contain the appropriate tags
-    * @access Public
-    * @since 0.3.6
-    * @param array [$videos] All the videos you wish to filter
-    * @param string [$tag] A comma-separated list of tags to filter on
-    * @return array The filtered list of videos
-    */
-	public function filter($videos, $tags)
+
+	/**
+	 * Removes assets that don't contain the appropriate tags.
+	 * @access Public
+	 * @since 0.3.6
+	 * @param array [$assets] All the assets you wish to filter
+	 * @param string [$tag] A comma-separated list of tags to filter on
+	 * @return array The filtered list of assets
+	 */
+	public function filter($assets, $tags)
 	{
 		$filtered = array();
-		
-		foreach($videos as $video)
+
+		foreach($assets as $asset)
 		{
-			if(count(array_intersect(explode(',', $tags), $video->tags)) > 0)
+			foreach($asset->tags as $k => $v)
 			{
-				$filtered[] = $video;
+				$asset->tags[$k] = strtolower($v);
+			}
+
+			if(count(array_intersect(explode(',', strtolower($tags)), $asset->tags)) > 0)
+			{
+				$filtered[] = $asset;
 			}
 		}
-	
+
 		return $filtered;
 	}
-	
-   /**
-    * Formats a video name to be search-engine friendly
-    * @access Public
-    * @since 0.2.1
-    * @param string [$name] The video name
-    * @return string The SEF video name
-    */
+
+	/**
+	 * Formats a media asset name to be search-engine friendly.
+	 * @access Public
+	 * @since 0.2.1
+	 * @param string [$name] The asset name
+	 * @return string The SEF asset name
+	 */
 	public function sef($name)
 	{
 		$name = preg_replace('/[^a-zA-Z0-9\s]+/', '', $name);
 		$name = preg_replace('/\s/', '-', $name);
-		
+
 		return $name;
 	}
-	
-   /**
-    * Retrieves the HTTP URL from a streaming asset (RTMP).
-    * @access Public
-    * @since 0.3.2
-    * @param string [$flvUrl] The RTMP FLV URL of an asset
-    * @return string The HTTP URL of an asset
-    */
+
+	/**
+	 * Retrieves the HTTP URL from a streaming asset (RTMP).
+	 * @access Public
+	 * @since 0.3.2
+	 * @param string [$flvUrl] The RTMP FLV URL of an asset
+	 * @return string The HTTP URL of an asset
+	 */
 	public function downloadUrl($flvUrl)
 	{
 		$return = '';
-		$url = 'http://brightcove.vo.llnwd.net/';
 		$matches = array();
-		
+
 		$preg = preg_match('/((.*?)\/)*/', $flvUrl, $matches);
 		$filename = preg_replace('/.*\//', '', $flvUrl);
 		$filename = preg_replace('/&.*/', '', $filename);
 
-		if(strpos($flvUrl, 'mp4') !== false)
+		if(strpos($flvUrl, 'mp4') !== FALSE)
 		{
 			$filename .= '.mp4';
 		} else {
 			$filename .= '.flv';
 		}
-		
-		if(strpos($flvUrl, '/d5/') !== false)
-		{
-			$return = ($url . 'pd5/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvUrl, '/o2/') !== false) {
-			$return = ($url . 'pd2/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvUrl, '/d6/') !== false) {
-			$return = ($url . 'pd6/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvUrl, '/d7/') !== false) {
-			$return = ($url . 'pd7/media/' . $matches[2] . '/' . $filename);
+
+		if(strpos($flvUrl, '/o2/') !== FALSE) {
+			$return = ('http://brightcove.vo.llnwd.net/pd1/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvUrl, '/d2/') !== FALSE) {
+			$return = ('http://brightcove.vo.llnwd.net/pd2/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvUrl, '/d3/') !== FALSE) {
+			$return = ('http://brightcove.vo.llnwd.net/pd3/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvUrl, '/d4/') !== FALSE) {
+			$return = ('http://brightcove.vo.llnwd.net/pd4/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvUrl, '/d5/') !== FALSE) {
+			$return = ('http://brightcove.vo.llnwd.net/pd5/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvUrl, '/d6/') !== FALSE) {
+			$return = ('http://brightcove.vo.llnwd.net/pd6/media/' . $matches[2] . '/' . $filename);
+		} elseif(strpos($flvUrl, '/d7/') !== FALSE) {
+			$return = ('http://brightcove.vo.llnwd.net/pd7/media/' . $matches[2] . '/' . $filename);
 		}
-		
+
 		return $return;
 	}
-	
-   /**
-    * Returns the JavaScript version of the player embed code
-    * @access Public
-    * @since 0.2.2
-    * @param int [$playerId] The ID of the player to embed
-    * @param mixed [$videoIds] The ID of the default video, or an array of video IDs
-    * @param array [$params] A key-value array of embed parameters
-    * @param array [$additional] A key-value array of additional embed parameters
-    * @return string The embed code
-    */
-	public function embed($playerId, $videoIds = NULL, $params = NULL, $additional = NULL)
+
+	/**
+	 * Returns the JavaScript version of the player embed code.
+	 * @access Public
+	 * @since 0.2.2
+	 * @param string [$type] The type of object to embed
+	 * @param int [$playerId] The ID of the player to embed
+	 * @param mixed [$assetIds] The ID of the default asset, or an array of asset IDs
+	 * @param array [$params] A key-value array of embed parameters
+	 * @param array [$additional] A key-value array of additional embed parameters
+	 * @return string The embed code
+	 */
+	public function embed($type = 'video', $playerId, $assetIds = NULL, $params = NULL, $additional = NULL)
 	{
-		if(!$playerId)
+		if(!isset($playerId))
 		{
-			$this->triggerError('008');
-			return FALSE;
+			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
 		}
-			
+
 		$values = array('id' => 'myExperience', 'bgcolor' => 'FFFFFF', 'width' => 486, 'height' => 412);
 
 		foreach($values as $key => $value)
@@ -1154,9 +930,9 @@ class Echove
 				$values[$key] = $params[$key];
 			}
 		}
-		
+
 		$additionalCode = '';
-		
+
 		if(is_array($additional))
 		{
 			foreach($additional as $key => $value)
@@ -1164,113 +940,366 @@ class Echove
 				$additionalCode .= '<param name="' . $key . '" value="' . $value . '" />';
 			}
 		}
-		
-		$videoCode = '';
-		
-		if($videoIds)
+
+		$assetCode = '';
+
+		if($assetIds)
 		{
-			if(is_array($videoIds))
+			if(is_array($assetIds))
 			{
-				$videoCode = '<param name="@videoPlayer" value="';
-				
-				foreach($videoIds as $videoId)
+				if(strtolower($type) == 'video')
 				{
-					$videoCode .= $videoId . ',';
+					$assetCode = '<param name="@videoPlayer" value="';
+				} else {
+					throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
 				}
-				
-				$videoCode = substr($videoCode, 0, -1);
-				$videoCode .= '" />';
+
+				foreach($assetIds as $assetId)
+				{
+					$assetCode .= $assetId . ',';
+				}
+
+				$assetCode = substr($assetCode, 0, -1);
+				$assetCode .= '" />';
 			} else {
-				$videoCode = '<param name="@videoPlayer" value="' . $videoIds . '" />';
+				if(strtolower($type) == 'video')
+				{
+					$assetCode = '<param name="@videoPlayer" value="' . $assetIds . '" />';
+				} else {
+					throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
+				}
 			}
 		}
-		
+
 		$code = '
 			<object id="' . $values['id'] . '" class="BrightcoveExperience">
 				<param name="bgcolor" value="#' . $values['bgcolor'] . '" />
 				<param name="width" value="' . $values['width'] . '" />
 				<param name="height" value="' . $values['height'] . '" />
 				<param name="playerID" value="' . $playerId . '" />'
-				. $videoCode
+				. $assetCode
 				. $additionalCode . '
 				<param name="isVid" value="true" />
 				<param name="isUI" value="true" />
 			</object>
 		';
-		
+
 		return $code;
 	}
 
-   /**
-    * Triggers an error if errors are enabled
-    * @access Private
-    * @since 0.3.1
-    * @param string [$err_code] The code number of an error
-    */	
-	private function triggerError($err_code)
+	/**
+	 * Retrieves the appropriate API URL
+	 * @access Private
+	 * @since 1.0.0
+	 * @param string [$type] The type of URL to retrieve, read or write
+	 * @return string The appropriate API URL
+	 */
+	private function getUrl($type = 'read')
 	{
-		if($this->show_errors)
+		if($this->secure)
 		{
-			switch($err_code)
+			$url = 'https://';
+		} else {
+			$url = 'http://';
+		}
+
+		if(strtolower($type) == 'read')
+		{
+			$url .= $this->url_read;
+		} elseif(strtolower($type) == 'write') {
+			$url .= $this->url_write;
+		} else {
+			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
+		}
+
+		return $url;
+	}
+
+	/**
+	 * Appends API parameters onto API request URL.
+	 * @access Private
+	 * @since 0.1.0
+	 * @param string [$method] The requested API method
+	 * @param array [$params] A key-value array of API parameters
+	 * @param string [$default] The default API parameter if only 1 provided
+	 * @return string The complete API request URL
+	 */
+	private function appendParams($method, $params = NULL, $default = NULL)
+	{
+		$url = $this->getUrl('read') . 'token=' . $this->token_read . '&command=' . $method;
+
+		if($params)
+		{
+			if($default)
 			{
-				case '001':
-					$text = 'Read token not provided';
-					$type = 'WARNING';
-					break;
-				case '002':
-					$text = 'Write token not provided';
-					$type = 'WARNING';
-					break;
-				case '003':
-					$text = 'Read API transaction failed';
-					$type = 'NOTICE';
-					break;
-				case '004':
-					$text = 'Write API transaction failed';
-					$type = 'WARNING';
-					break;
-				case '005':
-					$text = 'Requested method not found';
-					$type = 'WARNING';
-					break;
-				case '006':
-					$text = 'Type not specified';
-					$type = 'WARNING';
-					break;
-				case '007': $text = ''; $type = ''; break;
-				case '008':
-					$text = 'ID not provided';
-					$type = 'WARNING';
-					break;
-				case '009': $text = ''; $type = ''; break;
-				case '010':
-					$text = 'Media file transfer failed';
-					$type = 'WARNING';
-					break;
-				case '011':
-					$text = 'Unknown API error';
-					$type = 'WARNING';
-					break;
-				case '012':
-					$text = 'Image file transfer failed';
-					$type = 'WARNING';
-					break;
-				case '013':
-					$text = 'FLV files cannot have multiple renditions';
-					$type = 'NOTICE';
-			}
-			
-			if($type == 'NOTICE')
-			{
-				trigger_error(' [ECHOVE-' . $err_code . '] ' . $text . ' ', E_USER_NOTICE);
-			} elseif($type == 'WARNING') {
-				trigger_error(' [ECHOVE-' . $err_code . '] ' . $text . ' ', E_USER_WARNING);
+				$url .= '&' . $default . '=' . urlencode($params);
 			} else {
-				// Deprecated, do nothing
+				foreach($params as $option => $value)
+				{
+					$url .= '&' . $option . '=' . urlencode($value);
+				}
 			}
+		}
+
+		return $url;
+	}
+
+	/**
+	 * Retrieves API data from provided URL.
+	 * @access Private
+	 * @since 0.1.0
+	 * @param string [$url] The complete API request URL
+	 * @return object An object containing all API return data
+	 */
+	private function getData($url)
+	{
+		if(!isset($this->token_read))
+		{
+			throw new EchoveTokenError($this, self::ERROR_READ_TOKEN_NOT_PROVIDED);
+		}
+
+		$response = $this->curlRequest($url, TRUE);
+
+		if($response && $response != 'NULL')
+		{
+			$response_object = json_decode($response);
+
+			if(isset($response_object->error))
+			{
+				if($this->timeout_retry && $response_object->error->code == 103)
+				{
+					$this->getData($url);
+				} else {
+					throw new EchoveApiError($this, self::ERROR_API_ERROR, $response_object->error);
+				}
+			} else {
+				if(isset($response_object->items))
+				{
+					$data = $response_object->items;
+				} else {
+					$data = $response_object;
+				}
+
+				$this->page_number = isset($response_object->page_number) ? $response_object->page_number : NULL;
+				$this->page_size = isset($response_object->page_size) ? $response_object->page_size : NULL;
+				$this->total_count = isset($response_object->total_count) ? $response_object->total_count : NULL;
+
+				return $data;
+			}
+		} else {
+			throw new EchoveApiError($this, self::ERROR_API_ERROR);
 		}
 	}
 
+
+	/**
+	 * Sends data to the API.
+	 * @access Private
+	 * @since 1.0.0
+	 * @param array [$request] The data to send
+	 * @return object An object containing all API return data
+	 */
+	private function putData($request, $return_json = TRUE)
+	{
+		if(!isset($this->token_write))
+		{
+			throw new EchoveTokenError($this, self::ERROR_WRITE_TOKEN_NOT_PROVIDED);
+		}
+
+		$response = $this->curlRequest($request, FALSE);
+
+		if($return_json)
+		{
+			$response_object = json_decode($response);
+
+			if(!isset($response_object->result))
+			{
+				throw new EchoveApiError($this, self::ERROR_API_ERROR);
+			}
+		}
+
+		return $response_object;
+	}
+
+	/**
+	 * Makes a cURL request.
+	 * @access Private
+	 * @since 1.0.0
+	 * @param mixed [$request] URL to fetch or the data to send via POST
+	 * @param boolean [$get_request] If false, send POST params
+	 * @return void
+	 */
+	private function curlRequest($request, $get_request = FALSE)
+	{
+		$curl = curl_init();
+
+		if($get_request)
+		{
+			curl_setopt($curl, CURLOPT_URL, $request);
+		} else {
+			curl_setopt($curl, CURLOPT_URL, $this->getUrl('write'));
+			curl_setopt($curl, CURLOPT_POST, 1);
+			curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+		}
+
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		$response = curl_exec($curl);
+
+		$this->api_calls++;
+
+		$curl_error = NULL;
+
+		if(curl_errno($curl))
+		{
+			$curl_error = curl_error($curl);
+		}
+
+		curl_close($curl);
+
+		if($curl_error !== NULL)
+		{
+			if($get_request)
+			{
+				throw new EchoveTransactionError($this, self::ERROR_READ_API_TRANSACTION_FAILED, $curl_error);
+			} else {
+				throw new EchoveTransactionError($this, self::ERROR_WRITE_API_TRANSACTION_FAILED, $curl_error);
+			}
+		}
+
+		return $this->bit32clean($response);
+	}
+
+	/**
+	 * Cleans the response for 32-bit machine compliance.
+	 * @access Private
+	 * @since 1.0.0
+	 * @param string [$response] The response from a cURL request
+	 * @return string The cleansed string if using a 32-bit machine.
+	 */
+	private function bit32Clean($response)
+	{
+		if($this->bit32)
+		{
+			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
+			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
+			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Determines if provided type is valid
+	 * @access Private
+	 * @since 1.0.0
+	 * @param string [$type] The type
+	 */
+	private function validType($type)
+	{
+		if(!in_array(strtolower($type), $this->valid_types))
+		{
+			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
+		} else {
+			return TRUE;
+		}
+	}
+
+	/**
+	 * Triggers an error if errors are enabled.
+	 * @access Private
+	 * @since 0.3.1
+	 * @param string [$err_code] The code number of an error
+	 */
+	private function triggerError($err_code)
+	{
+		$text = $this->getErrorAsString($err_code);
+
+		if($this->show_notices)
+		{
+			trigger_error($text, E_USER_NOTICE);
+		}
+	}
+
+	/**
+	 * Converts an error code into a textual representation.
+	 * @access public
+	 * @since 1.0.0
+	 * @param int [$err_code] The code number of an error
+	 * @return string The error text
+	 */
+	public function getErrorAsString($err_code)
+	{
+		switch($err_code)
+		{
+			case self::ERROR_API_ERROR:
+				return 'API error';
+				break;
+			case self::ERROR_ID_NOT_PROVIDED:
+				return 'ID not provided';
+				break;
+			case self::ERROR_INVALID_FILE_TYPE:
+				return 'Unsupported file type';
+				break;
+			case self::ERROR_INVALID_METHOD:
+				return 'Requested method not found';
+				break;
+			case self::ERROR_INVALID_PROPERTY:
+				return 'Requested property not found';
+				break;
+			case self::ERROR_INVALID_TYPE:
+				return 'Type not specified';
+				break;
+			case self::ERROR_INVALID_UPLOAD_OPTION:
+				return 'An invalid media upload parameter has been set';
+				break;
+			case self::ERROR_READ_API_TRANSACTION_FAILED:
+				return 'Read API transaction failed';
+				break;
+			case self::ERROR_READ_TOKEN_NOT_PROVIDED:
+				return 'Read token not provided';
+				break;
+			case self::ERROR_WRITE_API_TRANSACTION_FAILED:
+				return 'Write API transaction failed';
+				break;
+			case self::ERROR_WRITE_TOKEN_NOT_PROVIDED:
+				return 'Write token not provided';
+				break;
+		}
+	}
 }
+
+class EchoveException extends Exception
+{
+
+	/**
+	 * The constructor for the EchoveException class
+	 * @access Public
+	 * @since 1.0.0
+	 * @param object [$obj] A pointer to the Echove class
+	 * @param int [$err_code] The error code
+	 * @param string [$raw_error_string] Any additional error information
+	 */
+	public function __construct(Echove $obj, $err_code, $raw_error_string = NULL)
+	{
+		$error = $obj->getErrorAsString($err_code);
+
+		if($raw_error_string !== NULL)
+		{
+			$error .= "'.\nDetails: \n";
+			$error .= isset($raw_error_string->message) ? $raw_error_string->message : $raw_error_string;
+		}
+
+		parent::__construct($error, $err_code);
+	}
+}
+
+class EchoveApiError extends EchoveException{}
+class EchoveIdNotProvided extends EchoveException{}
+class EchoveInvalidMethod extends EchoveException{}
+class EchoveInvalidProperty extends EchoveException{}
+class EchoveInvalidFileType extends EchoveException{}
+class EchoveInvalidType extends EchoveException{}
+class EchoveTokenError extends EchoveException{}
+class EchoveTransactionError extends EchoveException{}
 
 ?>
