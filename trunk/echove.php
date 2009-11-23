@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.0 (16 NOVEMBER 2009)
+ * ECHOVE 1.0.1 (23 NOVEMBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -16,6 +16,7 @@
  *	 Luke Weber, Kristen McGregor, Brandon Aaskov, Jesse Streb
  *
  * CHANGE LOG:
+ *   1.0.1 - SEF method now supports accented characters.
  *	 1.0.0 - Added new methods, including a unified putData, a setter and a getter, a URL
  *			 fetcher, a 32-bit cleanser, a unified cURL request, a type-check verifyer,
  *			 and a readable-error retriever. Added numerous new error improvements
@@ -855,6 +856,10 @@ class Echove
 	 */
 	public function sef($name)
 	{
+		$accent_match = array('Â', 'Ã', 'Ä', 'À', 'Á', 'Å', 'Æ', 'Ç', 'È', 'É', 'Ê', 'Ë', 'Ì', 'Í', 'Î', 'Ï', 'Ð', 'Ñ', 'Ò', 'Ó', 'Ô', 'Õ', 'Ö', 'Ø', 'Ù', 'Ú', 'Û', 'Ü', 'Ý', 'ß', 'à', 'á', 'â', 'ã', 'ä', 'å', 'æ', 'ç', 'è', 'é', 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ð', 'ñ', 'ò', 'ó', 'ô', 'õ', 'ö', 'ø', 'ù', 'ú', 'û', 'ü', 'ý', 'ÿ');
+		$accent_replace = array('A', 'A', 'A', 'A', 'A', 'A', 'AE', 'C', 'E', 'E', 'E', 'E', 'I', 'I', 'I', 'I', 'D', 'N', 'O', 'O', 'O', 'O', 'O', 'O', 'U', 'U', 'U', 'U', 'Y', 'B', 'a', 'a', 'a', 'a', 'a', 'a', 'ae', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i', 'o', 'n', 'o', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 'y');
+		
+		$name = str_replace($accent_match, $accent_replace, $name);
 		$name = preg_replace('/[^a-zA-Z0-9\s]+/', '', $name);
 		$name = preg_replace('/\s/', '-', $name);
 
