@@ -16,6 +16,8 @@
  *	 Luke Weber, Kristen McGregor, Brandon Aaskov, Jesse Streb
  *
  * CHANGE LOG:
+ *   1.0.2 - Removed RTMP to HTTP conversion method, instead providing support for new
+ *           media delivery method parameter.
  *   1.0.1 - SEF method now supports accented characters.
  *	 1.0.0 - Added new methods, including a unified putData, a setter and a getter, a URL
  *			 fetcher, a 32-bit cleanser, a unified cURL request, a type-check verifyer,
@@ -90,6 +92,7 @@ class Echove
 
 	private $api_calls = 0;
 	private $bit32 = FALSE;
+	private $media_delivery = 'default';
 	private $secure = FALSE;
 	private $show_notices = FALSE;
 	private $timeout_retry = FALSE;
@@ -278,6 +281,11 @@ class Echove
 
 				$params['get_item_count'] = 'TRUE';
 			}
+		}
+		
+		if(!isset($params['media_delivery']) && $this->media_delivery != 'default')
+		{
+			$params['media_deliver'] = $this->media_delivery;
 		}
 
 		if(isset($default) && !is_array($params))
@@ -864,48 +872,6 @@ class Echove
 		$name = preg_replace('/\s/', '-', $name);
 
 		return $name;
-	}
-
-	/**
-	 * Retrieves the HTTP URL from a streaming asset (RTMP).
-	 * @access Public
-	 * @since 0.3.2
-	 * @param string [$flvUrl] The RTMP FLV URL of an asset
-	 * @return string The HTTP URL of an asset
-	 */
-	public function downloadUrl($flvUrl)
-	{
-		$return = '';
-		$matches = array();
-
-		$preg = preg_match('/((.*?)\/)*/', $flvUrl, $matches);
-		$filename = preg_replace('/.*\//', '', $flvUrl);
-		$filename = preg_replace('/&.*/', '', $filename);
-
-		if(strpos($flvUrl, 'mp4') !== FALSE)
-		{
-			$filename .= '.mp4';
-		} else {
-			$filename .= '.flv';
-		}
-
-		if(strpos($flvUrl, '/o2/') !== FALSE) {
-			$return = ('http://brightcove.vo.llnwd.net/pd1/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvUrl, '/d2/') !== FALSE) {
-			$return = ('http://brightcove.vo.llnwd.net/pd2/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvUrl, '/d3/') !== FALSE) {
-			$return = ('http://brightcove.vo.llnwd.net/pd3/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvUrl, '/d4/') !== FALSE) {
-			$return = ('http://brightcove.vo.llnwd.net/pd4/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvUrl, '/d5/') !== FALSE) {
-			$return = ('http://brightcove.vo.llnwd.net/pd5/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvUrl, '/d6/') !== FALSE) {
-			$return = ('http://brightcove.vo.llnwd.net/pd6/media/' . $matches[2] . '/' . $filename);
-		} elseif(strpos($flvUrl, '/d7/') !== FALSE) {
-			$return = ('http://brightcove.vo.llnwd.net/pd7/media/' . $matches[2] . '/' . $filename);
-		}
-
-		return $return;
 	}
 
 	/**
