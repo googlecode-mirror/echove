@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.2 (1 DECEMBER 2009)
+ * ECHOVE 1.0.3 (1 DECEMBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -16,6 +16,7 @@
  *	 Luke Weber, Kristen McGregor, Brandon Aaskov, Jesse Streb
  *
  * CHANGE LOG:
+ *   1.0.3 - Implemented fixes for NULL parameter problems.
  *   1.0.2 - Removed RTMP to HTTP conversion method, instead providing support for new
  *           media delivery method parameter.
  *   1.0.1 - SEF method now supports accented characters.
@@ -175,6 +176,7 @@ class Echove
 			case 'videobyid':
 				$method = 'find_video_by_id';
 				$default = 'video_id';
+				$get_item_count = FALSE;
 				break;
 			case 'relatedvideos':
 				$method = 'find_related_videos';
@@ -184,14 +186,17 @@ class Echove
 			case 'videosbyids':
 				$method = 'find_videos_by_ids';
 				$default = 'video_ids';
+				$get_item_count = FALSE;
 				break;
 			case 'videobyreferenceid':
 				$method = 'find_video_by_reference_id';
 				$default = 'reference_id';
+				$get_item_count = FALSE;
 				break;
 			case 'videosbyreferenceids':
 				$method = 'find_videos_by_reference_ids';
 				$default = 'reference_ids';
+				$get_item_count = FALSE;
 				break;
 			case 'videosbyuserid':
 				$method = 'find_videos_by_user_id';
@@ -225,18 +230,22 @@ class Echove
 			case 'playlistbyid':
 				$method = 'find_playlist_by_id';
 				$default = 'playlist_id';
+				$get_item_count = FALSE;
 				break;
 			case 'playlistsbyids':
 				$method = 'find_playlists_by_id';
 				$default = 'playlist_ids';
+				$get_item_count = FALSE;
 				break;
 			case 'playlistbyreferenceid':
 				$method = 'find_playlist_by_reference_id';
 				$default = 'reference_id';
+				$get_item_count = FALSE;
 				break;
 			case 'playlistsbyreferenceids':
 				$method = 'find_playlists_by_reference_ids';
 				$default = 'reference_ids';
+				$get_item_count = FALSE;
 				break;
 			case 'playlistsforplayerid':
 				$method = 'find_playlists_for_player_id';
@@ -248,52 +257,40 @@ class Echove
 				break;
 		}
 
-		if(isset($params['from_date']) || (isset($default) && $default == 'from_date'))
+		if(!isset($params))
 		{
-			if($default == 'from_date' && !isset($params['from_date']))
+			$params = array();
+		} else {
+			if(!is_array($params))
 			{
-				$from_date = (string)$params;
-			} else {
-				$from_date = (string)$params['from_date'];
-			}
-
-			if(strlen($from_date) > 9)
-			{
-				$from_date = floor((int)$from_date / 60);
-			}
-
-			if(!is_array($params) && $default == 'from_date')
-			{
-				$params = $from_date;
-			} else {
-				$params['from_date'] = $from_date;
+				$temp = $params;
+				
+				$params = array();
+				$params[$default] = $temp;
 			}
 		}
 
-		if(isset($get_item_count))
+		if(isset($params['from_date']))
 		{
-			if(!isset($params['get_item_count']))
+			$params['from_date'] = (string)$params['from_date'];
+			
+			if(strlen($params['from_date']) > 9)
 			{
-				if(!is_array($params))
-				{
-					$params[$default] = $params;
-				}
-
-				$params['get_item_count'] = 'TRUE';
+				$params['from_date'] = floor((int)$params['from_date'] / 60);
 			}
 		}
-		
+
+		if(!isset($params['get_item_count']) && $get_item_count)
+		{
+			$params['get_item_count'] = 'TRUE';
+		}
+
 		if(!isset($params['media_delivery']) && $this->media_delivery != 'default')
 		{
-			$params['media_deliver'] = $this->media_delivery;
+			$params['media_delivery'] = $this->media_delivery;
 		}
 
-		if(isset($default) && !is_array($params))
-		{
-			$url = $this->appendParams($method, $params, $default);
-		} else {
-			$url = $this->appendParams($method, $params);
-		}
+		$url = $this->appendParams($method, $params);
 
 		return $this->getData($url);
 	}
@@ -310,14 +307,24 @@ class Echove
 	{
 		$this->validType($type);
 
-		$assets = array();
-		$current_page = 0;
-		$total_count = 0;
-		$total_page = 1;
+		if(!isset($params))
+		{
+			$params = array();
+		}
 
 		$params['get_item_count'] = 'TRUE';
 		$params['page_size'] = 100;
 		$params['page_number'] = 0;
+
+		if(!isset($params['media_delivery']) && $this->media_delivery != 'default')
+		{
+			$params['media_delivery'] = $this->media_delivery;
+		}
+
+		$assets = array();
+		$current_page = 0;
+		$total_count = 0;
+		$total_page = 1;
 
 		while($current_page < $total_page)
 		{
