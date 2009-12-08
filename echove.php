@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.3 (1 DECEMBER 2009)
+ * ECHOVE 1.0.4 (8 DECEMBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -16,6 +16,8 @@
  *	 Luke Weber, Kristen McGregor, Brandon Aaskov, Jesse Streb
  *
  * CHANGE LOG:
+ *   1.0.4 - Added more detailed error messages for Write API calls. Implemented
+ *           stricter checks for required upload fields. Fixed find_playlists_by_ids.
  *   1.0.3 - Implemented fixes for NULL parameter problems.
  *   1.0.2 - Removed RTMP to HTTP conversion method, instead providing support for new
  *           media delivery method parameter.
@@ -233,7 +235,7 @@ class Echove
 				$get_item_count = FALSE;
 				break;
 			case 'playlistsbyids':
-				$method = 'find_playlists_by_id';
+				$method = 'find_playlists_by_ids';
 				$default = 'playlist_ids';
 				$get_item_count = FALSE;
 				break;
@@ -413,17 +415,17 @@ class Echove
 			$media[$key] = $value;
 		}
 
-		if(!isset($media['name']))
+		if(!isset($media['name']) || is_null($media['name']) || $media['name'] == '')
 		{
 			$media['name'] = time();
 		}
 
-		if(!isset($media['shortDescription']))
+		if(!isset($media['shortDescription']) || is_null($media['shortDescription']) || $media['shortDescription'] == '')
 		{
 			$media['shortDescription'] = time();
 		}
 
-		if(!isset($media['referenceId']))
+		if(!isset($media['referenceId']) || is_null($media['referenceId']) || $media['referenceId'] == '')
 		{
 			$media['referenceId'] = time();
 		}
@@ -476,7 +478,7 @@ class Echove
 			$media[$key] = $value;
 		}
 
-		if(!isset($media['referenceId']))
+		if(!isset($media['referenceId']) || is_null($media['referenceId']) || $media['referenceId'] == '')
 		{
 			$media['referenceId'] = time();
 		}
@@ -539,7 +541,7 @@ class Echove
 			$media[$key] = $value;
 		}
 
-		if(!isset($media['referenceId']))
+		if(!isset($media['referenceId']) || is_null($media['referenceId']) || $media['referenceId'] == '')
 		{
 			$media['referenceId'] = time();
 		}
@@ -1092,7 +1094,7 @@ class Echove
 
 			if(!isset($response_object->result))
 			{
-				throw new EchoveApiError($this, self::ERROR_API_ERROR);
+				throw new EchoveApiError($this, self::ERROR_API_ERROR, $response_object->error);
 			}
 		}
 
@@ -1263,8 +1265,8 @@ class EchoveException extends Exception
 
 		if($raw_error_string !== NULL)
 		{
-			$error .= "'.\nDetails: \n";
-			$error .= isset($raw_error_string->message) ? $raw_error_string->message : $raw_error_string;
+			$error .= "'.\nDetails: ";
+			$error .= isset($raw_error_string->message) ? $raw_error_string->message . "\n" : $raw_error_string . "\n";
 		}
 
 		parent::__construct($error, $err_code);
