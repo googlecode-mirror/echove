@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.4 (8 DECEMBER 2009)
+ * ECHOVE 1.0.5 (22 DECEMBER 2009)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -15,51 +15,6 @@
  * CONTRIBUTORS:
  *	 Luke Weber, Kristen McGregor, Brandon Aaskov, Jesse Streb
  *
- * CHANGE LOG:
- *   1.0.4 - Added more detailed error messages for Write API calls. Implemented
- *           stricter checks for required upload fields. Fixed find_playlists_by_ids.
- *   1.0.3 - Implemented fixes for NULL parameter problems.
- *   1.0.2 - Removed RTMP to HTTP conversion method, instead providing support for new
- *           media delivery method parameter.
- *   1.0.1 - SEF method now supports accented characters.
- *	 1.0.0 - Added new methods, including a unified putData, a setter and a getter, a URL
- *			 fetcher, a 32-bit cleanser, a unified cURL request, a type-check verifyer,
- *			 and a readable-error retriever. Added numerous new error improvements
- *			 including exception handling and more stringent checks. Made numerous
- *			 efficiency improvements. Added support for various asset types. Simplified
- *			 numerous method calls. Added new properties and better-defined existing
- *			 properties. Added changes for various Brightcove API updates. Added API
- *			 call fail-over options. Added better protection for various properties.
- *			 Updated LimeLight URL converter. Implemented HTTPS support. Added return
- *			 data for update method. Added return of API error text.
- *	 0.4.0 - Provided better logic for createVideo method. Fixed error reporting in
- *			 createPlaylist, also included check to determine if video IDs are being
- *			 passed.
- *	 0.3.9 - Added share_video and get_upload_status methods. Corrected error for
- *			 find_modified_videos return. Updated error codes and reporting points.
- *	 0.3.8 - Improved debugging. Added new API find call, and get_item_count is now
- *			 assumed as TRUE.
- *	 0.3.7 - Fixed major error in Find method.
- *	 0.3.6 - Added debug information, video tag filtering, and a true Find All Videos
- *			 function.
- *	 0.3.5 - Added support for 32-bit servers. Error reporting can now be configured
- *			 during instantiation. Fixed URL encoding issue. Added support for tag
- *			 arrays.
- *	 0.3.4 - Improved error reporting. Added image upload.
- *	 0.3.3 - Fixed RTMP to HTTP URL function. Fixed video upload.
- *	 0.3.2 - Added RTMP to HTTP URL function, and function to easily parse video tags.
- *			 Improved SEF function. Added support for remote assets.
- *	 0.3.1 - Improved error reporting.
- *	 0.3.0 - Added Write API methods for creating, updating, and deleting both videos
- *			 and playlists.
- *	 0.2.2 - Fix to remove notices. Added embed method. Corrected video lengths.
- *	 0.2.1 - Setting default values to remove notices. Added inline code documentation.
- *			 Added utilities to convert video lengths from milliseconds to formatted
- *			 time or secondsfor ease of use and to convert video names to a search-
- *			 engine friendly format.
- *	 0.2.0 - Updated to include API return properties.
- *	 0.1.0 - Initial release.
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this
  * software and associated documentation files (the "Software"), to deal in the Software
  * without restriction, including without limitation the rights to use, copy, modify,
@@ -72,7 +27,9 @@
  * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
  * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
- * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE USE OR OTHER DEALINGS IN THE SOFTWARE. YOU AGREE TO RETAIN IN THE SOFTWARE AND ANY
+ * MODIFICATIONS TO THE SOFTWARE THE REFERENCE URL INFORMATION, AUTHOR ATTRIBUTION AND
+ * CONTRIBUTOR ATTRIBUTION PROVIDED HEREIN.
  */
 
 class Echove
@@ -98,6 +55,8 @@ class Echove
 	private $media_delivery = 'default';
 	private $secure = FALSE;
 	private $show_notices = FALSE;
+	private $timeout_attempts = 100;
+	private $timeout_current = 0;
 	private $timeout_retry = FALSE;
 	private $token_read = NULL;
 	private $token_write = NULL;
@@ -266,7 +225,7 @@ class Echove
 			if(!is_array($params))
 			{
 				$temp = $params;
-				
+
 				$params = array();
 				$params[$default] = $temp;
 			}
@@ -275,7 +234,7 @@ class Echove
 		if(isset($params['from_date']))
 		{
 			$params['from_date'] = (string)$params['from_date'];
-			
+
 			if(strlen($params['from_date']) > 9)
 			{
 				$params['from_date'] = floor((int)$params['from_date'] / 60);
@@ -294,6 +253,8 @@ class Echove
 
 		$url = $this->appendParams($method, $params);
 
+		$this->timeout_current = 0;
+
 		return $this->getData($url);
 	}
 
@@ -307,6 +268,8 @@ class Echove
 	 */
 	public function findAll($type = 'video', $params = NULL)
 	{
+		$this->timeout_current = 0;
+
 		$this->validType($type);
 
 		if(!isset($params))
@@ -370,11 +333,11 @@ class Echove
 	{
 		if(strtolower($type) == 'video')
 		{
-			if($file)
+			if(iset($file))
 			{
 				preg_match('/(\.f4a|\.f4b|\.f4v|\.f4p|\.flv)*$/i', $file, $invalid_extensions);
 
-				if($invalid_extensions[1])
+				if(isset($invalid_extensions[1]))
 				{
 					if(isset($options['encode_to']))
 					{
@@ -430,7 +393,7 @@ class Echove
 			$media['referenceId'] = time();
 		}
 
-		if($options)
+		if(isset($options))
 		{
 			foreach($options as $key => $value)
 			{
@@ -446,7 +409,7 @@ class Echove
 
 		$request['json'] = json_encode($post);
 
-		if($file)
+		if(isset($file))
 		{
 			$request['file'] = '@' . $file;
 		}
@@ -483,16 +446,16 @@ class Echove
 			$media['referenceId'] = time();
 		}
 
-		if($id)
+		if(isset($id))
 		{
 			$params[strtolower($type) . '_id'] = $id;
-		} elseif($ref_id) {
+		} elseif(isset($ref_id)) {
 			$params[strtolower($type) . '_reference_id'] = $ref_id;
 		} else {
 			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
 		}
 
-		if($resize)
+		if(isset($resize))
 		{
 			$params['resize'] = 'TRUE';
 		} else {
@@ -513,7 +476,7 @@ class Echove
 
 		$request['json'] = json_encode($post) . "\n";
 
-		if($file)
+		if(isset($file))
 		{
 			$request['file'] = '@' . $file;
 		}
@@ -623,7 +586,7 @@ class Echove
 
 		$params['token'] = $this->token_write;
 
-		if($options)
+		if(isset($options))
 		{
 			foreach($options as $key => $value)
 			{
@@ -631,10 +594,10 @@ class Echove
 			}
 		}
 
-		if($id)
+		if(isset($id))
 		{
 			$params[strtolower($type . '_id')] = $id;
-		} elseif($ref_id) {
+		} elseif(isset($ref_id)) {
 			$params['reference_id'] = $ref_id;
 		} else {
 			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
@@ -670,12 +633,12 @@ class Echove
 
 		$params['token'] = $this->token_write;
 
-		if($id)
+		if(isset($id))
 		{
 			$params[strtolower($type) . '_id'] = $id;
 		}
 
-		if($ref_id)
+		if(isset($ref_id))
 		{
 			$params['reference_id'] = $ref_id;
 		}
@@ -757,7 +720,7 @@ class Echove
 			return $total_seconds;
 		} else {
 			$time = '';
-			
+
 			$value = array(
 				'hours' => 0,
 				'minutes' => 0,
@@ -800,33 +763,51 @@ class Echove
 	 * @access Public
 	 * @since 0.3.2
 	 * @param array [$tags] The tags array from a media asset DTO
+	 * @param bool [$implode] Return array to Brightcove format
 	 * @return array A key-value array of tags
 	 */
-	public function tags($tags)
+	public function tags($tags, $implode = FALSE)
 	{
 		$return = array();
 
 		if(count($tags) > 0)
 		{
-			foreach($tags as $tag)
+			if($implode)
 			{
-				if(strpos($tag, '=') === FALSE)
-				{
-					$return[] = $tag;
-				} else {
-					$group = explode('=', $tag);
-					$key = trim($group[0]);
-					$value = trim($group[1]);
+				$i = 0;
 
-					if(!isset($return[$key]))
+				foreach($tags as $key => $value)
+				{
+					if($key !== $i)
 					{
-						$return[$key] = $value;
+						$return[] = $key . '=' . $value;
 					} else {
-						if(is_array($return[$key]))
+						$return[] = $value;
+					}
+
+					$i++;
+				}
+			} else {
+				foreach($tags as $tag)
+				{
+					if(strpos($tag, '=') === FALSE)
+					{
+						$return[] = $tag;
+					} else {
+						$group = explode('=', $tag);
+						$key = trim($group[0]);
+						$value = trim($group[1]);
+
+						if(!isset($return[$key]))
 						{
-							$return[$key][] = $value;
+							$return[$key] = $value;
 						} else {
-							$return[$key] = array($return[$key], $value);
+							if(is_array($return[$key]))
+							{
+								$return[$key][] = $value;
+							} else {
+								$return[$key] = array($return[$key], $value);
+							}
 						}
 					}
 				}
@@ -875,7 +856,7 @@ class Echove
 	{
 		$accent_match = array('Â', 'Ã', 'Ä', 'À', 'Á', 'Å', 'Æ', 'Ç', 'È', 'É', 'Ê', 'Ë', 'Ì', 'Í', 'Î', 'Ï', 'Ð', 'Ñ', 'Ò', 'Ó', 'Ô', 'Õ', 'Ö', 'Ø', 'Ù', 'Ú', 'Û', 'Ü', 'Ý', 'ß', 'à', 'á', 'â', 'ã', 'ä', 'å', 'æ', 'ç', 'è', 'é', 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ð', 'ñ', 'ò', 'ó', 'ô', 'õ', 'ö', 'ø', 'ù', 'ú', 'û', 'ü', 'ý', 'ÿ');
 		$accent_replace = array('A', 'A', 'A', 'A', 'A', 'A', 'AE', 'C', 'E', 'E', 'E', 'E', 'I', 'I', 'I', 'I', 'D', 'N', 'O', 'O', 'O', 'O', 'O', 'O', 'U', 'U', 'U', 'U', 'Y', 'B', 'a', 'a', 'a', 'a', 'a', 'a', 'ae', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i', 'o', 'n', 'o', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 'y');
-		
+
 		$name = str_replace($accent_match, $accent_replace, $name);
 		$name = preg_replace('/[^a-zA-Z0-9\s]+/', '', $name);
 		$name = preg_replace('/\s/', '-', $name);
@@ -923,7 +904,7 @@ class Echove
 
 		$assetCode = '';
 
-		if($assetIds)
+		if(isset($assetIds))
 		{
 			if(is_array($assetIds))
 			{
@@ -1008,9 +989,9 @@ class Echove
 	{
 		$url = $this->getUrl('read') . 'token=' . $this->token_read . '&command=' . $method;
 
-		if($params)
+		if(isset($params))
 		{
-			if($default)
+			if(isset($default))
 			{
 				$url .= '&' . $default . '=' . urlencode($params);
 			} else {
@@ -1033,6 +1014,8 @@ class Echove
 	 */
 	private function getData($url)
 	{
+		$this->timeout_current++;
+
 		if(!isset($this->token_read))
 		{
 			throw new EchoveTokenError($this, self::ERROR_READ_TOKEN_NOT_PROVIDED);
@@ -1046,7 +1029,7 @@ class Echove
 
 			if(isset($response_object->error))
 			{
-				if($this->timeout_retry && $response_object->error->code == 103)
+				if($this->timeout_retry && $response_object->error->code == 103 && $this->timeout_current < $this->timeout_attempts)
 				{
 					$this->getData($url);
 				} else {
@@ -1263,10 +1246,10 @@ class EchoveException extends Exception
 	{
 		$error = $obj->getErrorAsString($err_code);
 
-		if($raw_error_string !== NULL)
+		if(isset($raw_error_string))
 		{
 			$error .= "'.\nDetails: ";
-			$error .= isset($raw_error_string->message) ? $raw_error_string->message . "\n" : $raw_error_string . "\n";
+			$error .= isset($raw_error_string->message) ? $raw_error_string->message . ' (' . $raw_error_string->code . ':' . $raw_error_string->name . ')' . "\n" : $raw_error_string . "\n";
 		}
 
 		parent::__construct($error, $err_code);
