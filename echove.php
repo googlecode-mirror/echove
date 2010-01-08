@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.5 (22 DECEMBER 2009)
+ * ECHOVE 1.0.6 (08 JANUARY 2010)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -333,7 +333,7 @@ class Echove
 	{
 		if(strtolower($type) == 'video')
 		{
-			if(iset($file))
+			if(isset($file))
 			{
 				preg_match('/(\.f4a|\.f4b|\.f4v|\.f4p|\.flv)*$/i', $file, $invalid_extensions);
 
@@ -388,11 +388,6 @@ class Echove
 			$media['shortDescription'] = time();
 		}
 
-		if(!isset($media['referenceId']) || is_null($media['referenceId']) || $media['referenceId'] == '')
-		{
-			$media['referenceId'] = time();
-		}
-
 		if(isset($options))
 		{
 			foreach($options as $key => $value)
@@ -439,11 +434,6 @@ class Echove
 		foreach($meta as $key => $value)
 		{
 			$media[$key] = $value;
-		}
-
-		if(!isset($media['referenceId']) || is_null($media['referenceId']) || $media['referenceId'] == '')
-		{
-			$media['referenceId'] = time();
 		}
 
 		if(isset($id))
@@ -502,11 +492,6 @@ class Echove
 		foreach($meta as $key => $value)
 		{
 			$media[$key] = $value;
-		}
-
-		if(!isset($media['referenceId']) || is_null($media['referenceId']) || $media['referenceId'] == '')
-		{
-			$media['referenceId'] = time();
 		}
 
 		if(strtolower($type) == 'video')
@@ -1233,7 +1218,6 @@ class Echove
 
 class EchoveException extends Exception
 {
-
 	/**
 	 * The constructor for the EchoveException class
 	 * @access Public
