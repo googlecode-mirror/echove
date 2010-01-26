@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.6 (08 JANUARY 2010)
+ * ECHOVE 1.0.7 (26 JANUARY 2010)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -57,6 +57,7 @@ class Echove
 	private $show_notices = FALSE;
 	private $timeout_attempts = 100;
 	private $timeout_current = 0;
+	private $timeout_delay = 1;
 	private $timeout_retry = FALSE;
 	private $token_read = NULL;
 	private $token_write = NULL;
@@ -1016,6 +1017,16 @@ class Echove
 			{
 				if($this->timeout_retry && $response_object->error->code == 103 && $this->timeout_current < $this->timeout_attempts)
 				{
+					if($this->timeout_delay > 0)
+					{
+						if($this->timeout_delay < 1)
+						{
+							usleep($this->timeout_delay * 1000000);
+						} else {
+							sleep($this->timeout_delay);
+						}
+					}
+					
 					$this->getData($url);
 				} else {
 					throw new EchoveApiError($this, self::ERROR_API_ERROR, $response_object->error);
