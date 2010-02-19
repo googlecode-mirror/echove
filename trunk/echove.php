@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.7 (26 JANUARY 2010)
+ * ECHOVE 1.0.8 (19 FEBRUARY 2010)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -45,6 +45,7 @@ class Echove
 	const ERROR_READ_TOKEN_NOT_PROVIDED = 9;
 	const ERROR_WRITE_API_TRANSACTION_FAILED = 10;
 	const ERROR_WRITE_TOKEN_NOT_PROVIDED = 11;
+	const ERROR_DTO_DOES_NOT_EXIST = 12;
 
 	public $page_number = NULL;
 	public $page_size = NULL;
@@ -690,6 +691,101 @@ class Echove
 	}
 
 	/**
+	 * Removes assets from a playlist
+	 * @access Public
+	 * @since 1.0.8
+	 * @param int [$playlist_id] The ID of the playlist to modify
+	 * @param array [$video_ids] An array of video IDs to delete from the playlist
+	 * @return object The new playlist DTO
+	 */
+	public function removeFromPlaylist($playlist_id, $video_ids)
+	{
+		if(!isset($playlist_id))
+		{
+			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
+		}
+		
+		if(!is_array($video_ids))
+		{
+			$video_ids = array($video_ids);
+		}
+		
+		$safe_videos = array();
+		
+		$meta = array(
+			'playlist_id' => $playlist_id,
+			'fields' => 'videoIds'
+		);
+		
+		$playlist = $this->find('playlistById', $meta);
+		
+		if(!isset($playlist))
+		{
+			throw new EchoveDtoDoesNotExist($this, self::ERROR_DTO_DOES_NOT_EXIST);
+		}
+		
+		foreach($playlist->videoIds as $video)
+		{
+			if(!in_array($video, $video_ids))
+			{
+				$safe_videos[] = $video;
+			}
+		}
+		
+		$new_meta = array(
+			'id' => $playlist_id,
+			'videoIds' => $safe_videos
+		);
+		
+		return $this->update('playlist', $new_meta);
+	}
+
+	/**
+	 * Adds assets to a playlist
+	 * @access Public
+	 * @since 1.0.8
+	 * @param int [$playlist_id] The ID of the playlist to modify
+	 * @param array [$video_ids] An array of video IDs to add to the playlist
+	 * @return object The new playlist DTO
+	 */
+	public function addToPlaylist($playlist_id, $video_ids)
+	{
+		if(!isset($playlist_id))
+		{
+			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
+		}
+		
+		if(!is_array($video_ids))
+		{
+			$video_ids = array($video_ids);
+		}
+		
+		$meta = array(
+			'playlist_id' => $playlist_id,
+			'fields' => 'videoIds'
+		);
+		
+		$playlist = $this->find('playlistById', $meta);
+		
+		if(!isset($playlist))
+		{
+			throw new EchoveDtoDoesNotExist($this, self::ERROR_DTO_DOES_NOT_EXIST);
+		}
+		
+		foreach($video_ids as $video)
+		{
+			$playlist->videoIds[] = $video;
+		}
+		
+		$new_meta = array(
+			'id' => $playlist_id,
+			'videoIds' => $playlist->videoIds
+		);
+		
+		return $this->update('playlist', $new_meta);
+	}
+
+	/**
 	 * Converts milliseconds to formatted time or seconds.
 	 * @access Public
 	 * @since 0.2.1
@@ -1223,6 +1319,9 @@ class Echove
 			case self::ERROR_WRITE_TOKEN_NOT_PROVIDED:
 				return 'Write token not provided';
 				break;
+			case self::ERROR_DTO_DOES_NOT_EXIST:
+				return 'The requested object does not exist';
+				break;
 		}
 	}
 }
@@ -1259,5 +1358,6 @@ class EchoveInvalidFileType extends EchoveException{}
 class EchoveInvalidType extends EchoveException{}
 class EchoveTokenError extends EchoveException{}
 class EchoveTransactionError extends EchoveException{}
+class EchoveDtoDoesNotExist extends EchoveException{}
 
 ?>
