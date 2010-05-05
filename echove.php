@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.8 (19 FEBRUARY 2010)
+ * ECHOVE 1.0.9 (5 MAY 2010)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -433,6 +433,13 @@ class Echove
 		$params = array();
 		$media = array();
 
+		if(strtolower($type) == 'video')
+		{
+			$post['method'] = 'add_image';
+		} else {
+			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
+		}
+
 		foreach($meta as $key => $value)
 		{
 			$media[$key] = $value;
@@ -447,7 +454,7 @@ class Echove
 			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
 		}
 
-		if(isset($resize))
+		if($resize)
 		{
 			$params['resize'] = 'TRUE';
 		} else {
@@ -458,13 +465,6 @@ class Echove
 		$params['image'] = $media;
 
 		$post['params'] = $params;
-
-		if(strtolower($type) == 'video')
-		{
-			$post['method'] = 'add_image';
-		} else {
-			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
-		}
 
 		$request['json'] = json_encode($post) . "\n";
 
@@ -661,6 +661,11 @@ class Echove
 			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
 		}
 
+		if(!is_array($account_ids))
+		{
+			$account_ids = array($account_ids);
+		}
+
 		$request = array();
 		$post = array();
 		$params = array();
@@ -704,26 +709,26 @@ class Echove
 		{
 			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
 		}
-		
+
 		if(!is_array($video_ids))
 		{
 			$video_ids = array($video_ids);
 		}
-		
+
 		$safe_videos = array();
-		
+
 		$meta = array(
 			'playlist_id' => $playlist_id,
 			'fields' => 'videoIds'
 		);
-		
+
 		$playlist = $this->find('playlistById', $meta);
-		
+
 		if(!isset($playlist))
 		{
 			throw new EchoveDtoDoesNotExist($this, self::ERROR_DTO_DOES_NOT_EXIST);
 		}
-		
+
 		foreach($playlist->videoIds as $video)
 		{
 			if(!in_array($video, $video_ids))
@@ -731,12 +736,12 @@ class Echove
 				$safe_videos[] = $video;
 			}
 		}
-		
+
 		$new_meta = array(
 			'id' => $playlist_id,
 			'videoIds' => $safe_videos
 		);
-		
+
 		return $this->update('playlist', $new_meta);
 	}
 
@@ -754,34 +759,34 @@ class Echove
 		{
 			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
 		}
-		
+
 		if(!is_array($video_ids))
 		{
 			$video_ids = array($video_ids);
 		}
-		
+
 		$meta = array(
 			'playlist_id' => $playlist_id,
 			'fields' => 'videoIds'
 		);
-		
+
 		$playlist = $this->find('playlistById', $meta);
-		
+
 		if(!isset($playlist))
 		{
 			throw new EchoveDtoDoesNotExist($this, self::ERROR_DTO_DOES_NOT_EXIST);
 		}
-		
+
 		foreach($video_ids as $video)
 		{
 			$playlist->videoIds[] = $video;
 		}
-		
+
 		$new_meta = array(
 			'id' => $playlist_id,
 			'videoIds' => $playlist->videoIds
 		);
-		
+
 		return $this->update('playlist', $new_meta);
 	}
 
@@ -1122,7 +1127,7 @@ class Echove
 							sleep($this->timeout_delay);
 						}
 					}
-					
+
 					$this->getData($url);
 				} else {
 					throw new EchoveApiError($this, self::ERROR_API_ERROR, $response_object->error);
@@ -1289,6 +1294,9 @@ class Echove
 			case self::ERROR_API_ERROR:
 				return 'API error';
 				break;
+			case self::ERROR_DTO_DOES_NOT_EXIST:
+				return 'The requested object does not exist';
+				break;
 			case self::ERROR_ID_NOT_PROVIDED:
 				return 'ID not provided';
 				break;
@@ -1319,9 +1327,6 @@ class Echove
 			case self::ERROR_WRITE_TOKEN_NOT_PROVIDED:
 				return 'Write token not provided';
 				break;
-			case self::ERROR_DTO_DOES_NOT_EXIST:
-				return 'The requested object does not exist';
-				break;
 		}
 	}
 }
@@ -1351,13 +1356,13 @@ class EchoveException extends Exception
 }
 
 class EchoveApiError extends EchoveException{}
+class EchoveDtoDoesNotExist extends EchoveException{}
 class EchoveIdNotProvided extends EchoveException{}
+class EchoveInvalidFileType extends EchoveException{}
 class EchoveInvalidMethod extends EchoveException{}
 class EchoveInvalidProperty extends EchoveException{}
-class EchoveInvalidFileType extends EchoveException{}
 class EchoveInvalidType extends EchoveException{}
 class EchoveTokenError extends EchoveException{}
 class EchoveTransactionError extends EchoveException{}
-class EchoveDtoDoesNotExist extends EchoveException{}
 
 ?>
