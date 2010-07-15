@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.0.9 (5 MAY 2010)
+ * ECHOVE 1.1.0 (15 JULY 2010)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -415,16 +415,61 @@ class Echove
 	}
 
 	/**
+	 * Creates a playlist.
+	 * @access Public
+	 * @since 0.3.0
+	 * @param string [$type] The type of playlist to create
+	 * @param array [$meta] The playlist information
+	 * @return mixed The playlist ID
+	 */
+	public function createPlaylist($type = 'video', $meta)
+	{
+		$request = array();
+		$post = array();
+		$params = array();
+		$media = array();
+
+		foreach($meta as $key => $value)
+		{
+			$media[$key] = $value;
+		}
+
+		if(strtolower($type) == 'video')
+		{
+			if(isset($media['videoIds']))
+			{
+				foreach($media['videoIds'] as $key => $value)
+				{
+					$media['videoIds'][$key] = (int)$value;
+				}
+			}
+
+			$params['playlist'] = $media;
+			$post['method'] = 'create_playlist';
+		} else {
+			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
+		}
+
+		$params['token'] = $this->token_write;
+
+		$post['params'] = $params;
+
+		$request['json'] = json_encode($post);
+
+		return $this->putData($request)->result;
+	}
+
+	/**
 	 * Uploads a media image file to Brightcove.
 	 * @access Public
 	 * @since 0.3.4
-	 * @param string [$type] The type of object to upload
+	 * @param string [$type] The type of object to upload image for
 	 * @param string [$file] The location of the temporary file
 	 * @param array [$meta] The image information
 	 * @param int [$id] The ID of the media asset to assign the image to
 	 * @param string [$ref_id] The reference ID of the media asset to assign the image to
 	 * @param bool [$resize] Whether or not to resize the image on upload
-	 * @return mixed The image asset ID
+	 * @return mixed The image asset
 	 */
 	public function createImage($type = 'video', $file = NULL, $meta, $id = NULL, $ref_id = NULL, $resize = TRUE)
 	{
@@ -477,48 +522,92 @@ class Echove
 	}
 
 	/**
-	 * Creates a playlist.
+	 * Uploads a logo overlay file to Brightcove.
 	 * @access Public
-	 * @since 0.3.0
-	 * @param string [$type] The type of playlist to create
-	 * @param array [$meta] The playlist information
-	 * @return mixed The playlist ID
+	 * @since 1.1.0
+	 * @param string [$file] The location of the temporary file
+	 * @param array [$meta] The logo overlay information
+	 * @param int [$id] The ID of the media asset to assign the logo overlay to
+	 * @param string [$ref_id] The reference ID of the media asset to assign the logo overlay to
+	 * @return mixed The logo overlay asset
 	 */
-	public function createPlaylist($type = 'video', $meta)
+	public function createOverlay($file = NULL, $meta, $id = NULL, $ref_id = NULL)
 	{
 		$request = array();
 		$post = array();
 		$params = array();
 		$media = array();
 
+		$post['method'] = 'add_logo_overlay';
+
 		foreach($meta as $key => $value)
 		{
 			$media[$key] = $value;
 		}
 
-		if(strtolower($type) == 'video')
+		if(isset($id))
 		{
-			if(isset($media['videoIds']))
-			{
-				foreach($media['videoIds'] as $key => $value)
-				{
-					$media['videoIds'][$key] = (int)$value;
-				}
-			}
-
-			$params['playlist'] = $media;
-			$post['method'] = 'create_playlist';
+			$params['video_id'] = $id;
+		} elseif(isset($ref_id)) {
+			$params['video_reference_id'] = $ref_id;
 		} else {
-			throw new EchoveInvalidType($this, self::ERROR_INVALID_TYPE);
+			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
 		}
 
 		$params['token'] = $this->token_write;
+		$params['logooverlay'] = $media;
 
 		$post['params'] = $params;
 
-		$request['json'] = json_encode($post);
+		$request['json'] = json_encode($post) . "\n";
+
+		if(isset($file))
+		{
+			$request['file'] = '@' . $file;
+		}
 
 		return $this->putData($request)->result;
+	}
+
+	/**
+	 * Deletes a logo overlay.
+	 * @access Public
+	 * @since 1.1.0
+	 * @param int [$id] The ID of the media asset
+	 * @param string [$ref_id] The reference ID of the media asset
+	 * @param array [$options] Optional values
+	 */
+	public function deleteOverlay($id = NULL, $ref_id = NULL, $options = NULL)
+	{
+		$request = array();
+		$post = array();
+		$params = array();
+
+		$params['token'] = $this->token_write;
+
+		if(isset($options))
+		{
+			foreach($options as $key => $value)
+			{
+				$params[$key] = $value;
+			}
+		}
+
+		if(isset($id))
+		{
+			$params['video_id'] = $id;
+		} elseif(isset($ref_id)) {
+			$params['video_reference_id'] = $ref_id;
+		} else {
+			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
+		}
+
+		$post['method'] = strtolower('remove_logo_overlay');
+		$post['params'] = $params;
+
+		$request['json'] = json_encode($post) . "\n";
+
+		return $this->putData($request, FALSE);
 	}
 
 	/**
@@ -561,7 +650,7 @@ class Echove
 	 * @param string [$type] The type of item to delete
 	 * @param int [$id] The ID of the media asset
 	 * @param string [$ref_id] The reference ID of the media asset
-	 * @param array [$options] Optional upload values
+	 * @param array [$options] Optional values
 	 */
 	public function delete($type = 'video', $id = NULL, $ref_id = NULL, $options = NULL)
 	{
@@ -652,9 +741,10 @@ class Echove
 	 * @param int [$id] The ID of the media asset
 	 * @param array [$account_ids] An array of account IDs
 	 * @param bool [$accept] Whether the share should be auto accepted
+	 * @param bool [$force] Whether the share should overwrite existing copies of the media
 	 * @return array The new media asset IDs
 	 */
-	public function shareMedia($type = 'video', $id, $account_ids, $accept = FALSE)
+	public function shareMedia($type = 'video', $id, $account_ids, $accept = FALSE, $force = FALSE)
 	{
 		if(!isset($id))
 		{
@@ -678,6 +768,13 @@ class Echove
 			$params['auto_accept'] = 'TRUE';
 		} else {
 			$params['auto_accept'] = 'FALSE';
+		}
+
+		if($force)
+		{
+			$params['force_reshare'] = 'TRUE';
+		} else {
+			$params['force_reshare'] = 'FALSE';
 		}
 
 		if(strtolower($type) == 'video')
@@ -1240,9 +1337,7 @@ class Echove
 	{
 		if($this->bit32)
 		{
-			$response = preg_replace('/:\s*(\d{10,})/', ':"$1"', $response);
-			$response = preg_replace('/(\d{10,})\]/', '"$1"]', $response);
-			$response = preg_replace('/(\d{10,})\,/', '"$1",', $response);
+			$response = preg_replace('/(?:((?:":\s*)(?:\[\s*)?|(?:\[\s*)|(?:\,\s*))+(\d{10,}))/', '\1"\2"', $response);
 		}
 
 		return $response;
