@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.1.0 (15 JULY 2010)
+ * ECHOVE 1.1.1 (12 AUGUST 2010)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -46,6 +46,7 @@ class Echove
 	const ERROR_WRITE_API_TRANSACTION_FAILED = 10;
 	const ERROR_WRITE_TOKEN_NOT_PROVIDED = 11;
 	const ERROR_DTO_DOES_NOT_EXIST = 12;
+	const ERROR_SEARCH_TERMS_NOT_PROVIDED = 13;
 
 	public $page_number = NULL;
 	public $page_size = NULL;
@@ -319,6 +320,50 @@ class Echove
 		}
 
 		return $assets;
+	}
+
+	/**
+	 * Performs a search of video meta data
+	 * @access Public
+	 * @since 1.1.1
+	 * @param string [$type] The type of objects to retrieve
+	 * @param string [$terms] The terms to use for the search
+	 * @param mixed [$params] A key-value array of API parameters
+	 * @return object An object containing all API return data
+	 */
+	public function search($type = 'video', $terms = NULL, $params = NULL)
+	{
+		if(!isset($terms) || !is_array($terms))
+		{
+			throw new EchoveSearchTermsNotProvided($this, self::ERROR_SEARCH_TERMS_NOT_PROVIDED);
+		}
+		
+		if(!isset($params))
+		{
+			$params = array();
+		} else {
+			if(!is_array($params))
+			{
+				$temp = $params;
+
+				$params = array();
+				$params[$default] = $temp;
+			}
+		}
+
+		if(!isset($params['get_item_count']))
+		{
+			$params['get_item_count'] = 'TRUE';
+		}
+		
+		foreach($terms as $key => $value)
+		{
+			$params[$key] = $value;
+		}
+
+		$url = $this->appendParams('search_videos', $params);
+
+		return $this->getData($url);
 	}
 
 	/**
@@ -1416,6 +1461,9 @@ class Echove
 			case self::ERROR_READ_TOKEN_NOT_PROVIDED:
 				return 'Read token not provided';
 				break;
+			case self::ERROR_SEARCH_TERMS_NOT_PROVIDED:
+				return 'Search terms not provided';
+				break;
 			case self::ERROR_WRITE_API_TRANSACTION_FAILED:
 				return 'Write API transaction failed';
 				break;
@@ -1459,5 +1507,6 @@ class EchoveInvalidProperty extends EchoveException{}
 class EchoveInvalidType extends EchoveException{}
 class EchoveTokenError extends EchoveException{}
 class EchoveTransactionError extends EchoveException{}
+class EchoveSearchTermsNotProvided extends EchoveException{}
 
 ?>
