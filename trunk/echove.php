@@ -327,7 +327,7 @@ class Echove
 	 * @access Public
 	 * @since 1.1.1
 	 * @param string [$type] The type of objects to retrieve
-	 * @param string [$terms] The terms to use for the search
+	 * @param array [$terms] The terms to use for the search
 	 * @param mixed [$params] A key-value array of API parameters
 	 * @return object An object containing all API return data
 	 */
