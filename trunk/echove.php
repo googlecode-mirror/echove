@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.1.1 (12 AUGUST 2010)
+ * ECHOVE 1.1.2 (24 AUGUST 2010)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -281,8 +281,12 @@ class Echove
 		}
 
 		$params['get_item_count'] = 'TRUE';
-		$params['page_size'] = 100;
 		$params['page_number'] = 0;
+
+		if(!isset($params['page_size']) || $params['page_size'] > 100)
+		{
+			$params['page_size'] = 100;
+		}
 
 		if(!isset($params['media_delivery']) && $this->media_delivery != 'default')
 		{
@@ -305,7 +309,7 @@ class Echove
 			if($total_count < 1)
 			{
 				$total_count = $this->total_count;
-				$total_page = ceil($total_count / 100);
+				$total_page = ceil($total_count / $params['page_size']);
 			}
 
 			if(is_array($result))
@@ -337,7 +341,7 @@ class Echove
 		{
 			throw new EchoveSearchTermsNotProvided($this, self::ERROR_SEARCH_TERMS_NOT_PROVIDED);
 		}
-		
+
 		if(!isset($params))
 		{
 			$params = array();
@@ -355,7 +359,7 @@ class Echove
 		{
 			$params['get_item_count'] = 'TRUE';
 		}
-		
+
 		foreach($terms as $key => $value)
 		{
 			$params[$key] = $value;
@@ -1505,8 +1509,8 @@ class EchoveInvalidFileType extends EchoveException{}
 class EchoveInvalidMethod extends EchoveException{}
 class EchoveInvalidProperty extends EchoveException{}
 class EchoveInvalidType extends EchoveException{}
+class EchoveSearchTermsNotProvided extends EchoveException{}
 class EchoveTokenError extends EchoveException{}
 class EchoveTransactionError extends EchoveException{}
-class EchoveSearchTermsNotProvided extends EchoveException{}
 
 ?>
