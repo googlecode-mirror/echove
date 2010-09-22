@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ECHOVE 1.1.2 (24 AUGUST 2010)
+ * ECHOVE 1.2.0 (22 SEPTEMBER 2010)
  * A Brightcove PHP SDK
  *
  * REFERENCES:
@@ -47,6 +47,7 @@ class Echove
 	const ERROR_WRITE_TOKEN_NOT_PROVIDED = 11;
 	const ERROR_DTO_DOES_NOT_EXIST = 12;
 	const ERROR_SEARCH_TERMS_NOT_PROVIDED = 13;
+	const ERROR_DEPRECATED = 99;
 
 	public $page_number = NULL;
 	public $page_size = NULL;
@@ -362,10 +363,27 @@ class Echove
 
 		foreach($terms as $key => $value)
 		{
-			$params[$key] = $value;
+			if(strpos($value, ',') !== FALSE)
+			{
+				$i = 0;
+				$parts = explode(',', $value);
+				
+				foreach($parts as $part)
+				{
+					if($i == 0)
+					{
+						$params[$key] = $part;
+						$i++;
+					} else {
+						$params[$key] .= '%26' . $key . '%3D' . $part;
+					}
+				}
+			} else {
+				$params[$key] = $value;
+			}
 		}
 
-		$url = $this->appendParams('search_videos', $params);
+		$url = str_replace('%2526', '&', str_replace('%253D', '=', $this->appendParams('search_' . $type . 's', $params)));
 
 		return $this->getData($url);
 	}
@@ -1096,11 +1114,12 @@ class Echove
 
 		return $name;
 	}
-
+	
 	/**
 	 * Returns the JavaScript version of the player embed code.
 	 * @access Public
 	 * @since 0.2.2
+	 * @deprecated 1.2.0
 	 * @param string [$type] The type of object to embed
 	 * @param int [$playerId] The ID of the player to embed
 	 * @param mixed [$assetIds] The ID of the default asset, or an array of asset IDs
@@ -1110,6 +1129,8 @@ class Echove
 	 */
 	public function embed($type = 'video', $playerId, $assetIds = NULL, $params = NULL, $additional = NULL)
 	{
+		throw new EchoveDeprecated($this, self::ERROR_DEPRECATED);
+		
 		if(!isset($playerId))
 		{
 			throw new EchoveIdNotProvided($this, self::ERROR_ID_NOT_PROVIDED);
@@ -1474,6 +1495,9 @@ class Echove
 			case self::ERROR_WRITE_TOKEN_NOT_PROVIDED:
 				return 'Write token not provided';
 				break;
+			case self::ERROR_DEPRECATED:
+				return 'Access to this method or property has been deprecated';
+				break;
 		}
 	}
 }
@@ -1503,6 +1527,7 @@ class EchoveException extends Exception
 }
 
 class EchoveApiError extends EchoveException{}
+class EchoveDeprecated extends EchoveException{}
 class EchoveDtoDoesNotExist extends EchoveException{}
 class EchoveIdNotProvided extends EchoveException{}
 class EchoveInvalidFileType extends EchoveException{}
